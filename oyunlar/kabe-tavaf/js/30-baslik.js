@@ -52,18 +52,22 @@ function oyunUst(dt) {
   yaziAralik(c, '4px');
   c.font = '600 15px ' + GOVDE_YAZI;
   c.fillStyle = RENK.vurgu;
-  c.fillText('MESCİD-İ HARÂM · CANLI TAVAF', GW / 2, 40);
+  c.fillText('MESCİD-İ HARÂM · CANLI TAVAF', GW / 2, 32);
   yaziAralik(c, '0px');
   // başlık
   c.font = '700 58px ' + BASLIK_YAZI;
   c.shadowColor = 'rgba(232,195,106,0.55)';
   c.shadowBlur = 18;
   c.fillStyle = '#fff8e6';
-  c.fillText('Kâbe-i Muazzama', GW / 2, 98);
+  c.fillText('Kâbe-i Muazzama', GW / 2, 88);
   c.shadowBlur = 0;
   c.font = '500 21px ' + GOVDE_YAZI;
   c.fillStyle = RENK.acik;
-  c.fillText('Yorum yaz, ismin tavafa katılsın', GW / 2, 130);
+  c.fillText('Yorum yaz, ismin tavafa katılsın', GW / 2, 118);
+  // küçük bildiri: yorumla karakter seçme (15-kilik.js, oyunYorum)
+  c.font = '500 14px ' + GOVDE_YAZI;
+  c.fillStyle = RENK.vurgu;
+  c.fillText('Yoruma “erkek” ya da “kadın” yaz, karakterin değişsin', GW / 2, 140);
   sayaclarCiz(150);
   duaKartCiz(188, 116);
   hediyeKartlari(314, 86);

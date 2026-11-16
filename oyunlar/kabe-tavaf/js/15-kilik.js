@@ -17,6 +17,9 @@ function kilikKur(k) {
   if (k.kilik)
     return;
   k.kilik = true;
+  // izleyici daha önce "erkek" / "kadın" yazarak seçtiyse o geçerli; seçmediyse kimlikten türeyen rastgele görünüş
+  if (!k.npc && CINSIYET[k.id])
+    k.g.kadin = CINSIYET[k.id] === 'k';
   const g = k.g, r = rastgeleUret(ozet(k.id + ':kilik'));
   if (g.kadin) {
     const f = FERACE_RENK[Math.floor(r() * FERACE_RENK.length)];
@@ -231,4 +234,57 @@ function basUstu(k, ph, olcek) {
     c.arc(x0, y0, R, 0, TAU);
     c.stroke();
   }
+}
+
+/* ---- yorumla karakter seçme ----
+ * Yoruma yalnız "erkek" yazan izleyicinin karakteri erkek (ihram), yalnız "kadın" yazanınki kadın (ferace) olur.
+ * Yorumun tamamı bu kelime olmalı (noktalama ve emoji sayılmaz): "erkek kardeşim için dua" bir şey değiştirmez.
+ * Hiçbir şey yazmayan, kimliğinden türeyen rastgele görünüşüyle kalır. Seçimler tarayıcıda saklanır: aynı kişi
+ * sonraki yayında da seçtiği karakterle gelir.
+ */
+const CINSIYET_ANAHTAR = 'kabe-tavaf-cinsiyet', CINSIYET_EN_COK = 3000;
+const CINSIYET = (() => {
+  try {
+    const v = JSON.parse(localStorage.getItem(CINSIYET_ANAHTAR) || '{}');
+    return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+  }
+  catch (h) {
+    return {};
+  }
+})();
+function cinsiyetOku(metin) {
+  const m = String(metin).toLocaleLowerCase('tr').replace(/[^a-zçğıöşü]/g, '');
+  if (m === 'erkek')
+    return 'e';
+  if (m === 'kadın' || m === 'kadin')
+    return 'k';
+  return null;
+}
+function oyunYorum(k, metin) {
+  const c = cinsiyetOku(metin);
+  if (!c || k.npc)
+    return;
+  if (CINSIYET[k.id] !== c) {
+    const idler = Object.keys(CINSIYET);
+    if (idler.length >= CINSIYET_EN_COK)
+      delete CINSIYET[idler[0]]; // en eski seçim düşer
+    delete CINSIYET[k.id];
+    CINSIYET[k.id] = c;
+    try {
+      localStorage.setItem(CINSIYET_ANAHTAR, JSON.stringify(CINSIYET));
+    }
+    catch (h) { /* saklanamazsa yalnız bu yayında geçerli */ }
+  }
+  const kadin = c === 'k';
+  if (k.kilik && k.g.kadin === kadin)
+    return;
+  // görünüşü kimlikten yeniden üret (örtü / sakal önceki kılığın izini bırakmasın), boyu koru
+  const boy = k.g.boy, salin = k.g.salin;
+  k.g = gorunumUret(k.id);
+  k.g.boy = boy;
+  k.g.salin = salin;
+  k.g.kadin = kadin;
+  k.kilik = false;
+  kilikKur(k);
+  gunluk('karakter', k.ad, kadin ? 'kadın karakter seçti' : 'erkek karakter seçti', false, k.id);
 }

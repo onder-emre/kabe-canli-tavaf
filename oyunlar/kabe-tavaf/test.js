@@ -81,6 +81,24 @@ const { sonuc, kontrol } = kontrolcu();
   });
   kontrol('Şarkı sırası: link eklenir, geçersiz link eklenmez, sıra değişir, silinir', sk.sayi1 === 2 && sk.ilk !== sk.yeniIlk && sk.sayi2 === 1 && sk.img === 0, sk);
 
+  // yorumla karakter seçme: yalnız "erkek" / "kadın" yazan değişir, cümle içinde geçmesi değiştirmez
+  const cin = await p.evaluate(() => {
+    const D = CanliOyun._test.D, yaz = (id, m) => CanliOyun.olay({ tip: 'yorum', kullanici: { id, ad: id }, metin: m });
+    yaz('c1', 'selam');
+    const ilk = D.oy.get('c1').g.kadin, r = {};
+    yaz('c1', ilk ? 'Erkek' : 'KADIN 🙏');
+    r.degisti = D.oy.get('c1').g.kadin !== ilk;
+    r.kilik = D.oy.get('c1').tv.tur === (ilk ? 'ihram' : 'ferace');
+    yaz('c1', ilk ? 'erkek kardeşim için dua edin' : 'kadın doğum hastanesi');
+    r.cumle = D.oy.get('c1').g.kadin !== ilk;
+    yaz('c2', 'kadin');
+    yaz('c3', 'erkek');
+    r.c2 = D.oy.get('c2').tv.tur;
+    r.c3 = D.oy.get('c3').tv.tur;
+    return r;
+  });
+  kontrol('Yoruma yalnız "erkek" ya da "kadın" yazanın karakteri değişir; cümle içinde geçmesi değiştirmez', cin.degisti && cin.kilik && cin.cumle && cin.c2 === 'ferace' && cin.c3 === 'ihram', cin);
+
   kontrol('Tavaf testlerinde sayfada hata çıkmadı', hatalar.length === 0, hatalar.slice(0, 4).join(' | '));
   await b.close();
   process.exit(raporla(sonuc) ? 1 : 0);

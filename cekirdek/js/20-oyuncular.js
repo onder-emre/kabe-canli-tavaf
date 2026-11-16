@@ -132,6 +132,9 @@ function olay(o) {
       k.son = zaman;
       if (b)
         k.balon = { m: kisalt(b, 30), t0: zaman };
+      // İsteğe bağlı oyun kancası: yorumun metnine göre oyun bir şey yapabilir (k: yorumu yazan, m: temizlenmiş metin)
+      if (typeof oyunYorum === 'function')
+        oyunYorum(k, m);
     }
     gunluk('yorum', ad, m, false, id);
   }
