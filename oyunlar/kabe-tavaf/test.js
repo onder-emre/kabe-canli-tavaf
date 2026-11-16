@@ -1,0 +1,87 @@
+// Kâbe Canlı Tavaf'a özgü kontroller: her hediye kademesinin etkisi, ad kartı, tur sayımı ve tavafın tamamlanması,
+// beğeni hedefi, şarkı sırası. Çekirdek testleri ayrıca çalışır. Çalıştırma: node oyunlar/kabe-tavaf/test.js kabe-tavaf
+'use strict';
+const path = require('path');
+const { OYUN_URL, CIKTI, tarayici, raporla, kontrolcu, hazirBekle } = require(path.join(__dirname, '..', '..', 'cekirdek', 'test', 'ortak'));
+const { sonuc, kontrol } = kontrolcu();
+
+(async () => {
+  const b = await tarayici();
+  const hatalar = [];
+  const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
+  p.on('pageerror', e => hatalar.push('SAYFA HATASI: ' + e.message));
+  p.on('console', m => { if (m.type() === 'error' && !/ERR_TUNNEL|Failed to load resource|fonts\.g/.test(m.text())) hatalar.push(m.text()); });
+  await p.addInitScript(() => { window.OYUN_YAZI_KAPALI = true; });
+  await p.goto(OYUN_URL);
+  await hazirBekle(p);
+  await p.evaluate(() => { const o = document.getElementById('oto'); if (o.getAttribute('aria-pressed') === 'true') o.click(); document.getElementById('bosalt').click(); });
+
+  // her kademe kendi etkisini başlatır, ad kartı gönderenin adını yazar
+  const kd = await p.evaluate(() => {
+    const D = CanliOyun._test.D, cik = {};
+    for (const j of [1, 10, 100, 500]) {
+      CanliOyun._test.zamanEkle(0.2);
+      const kafile = D.kafile.length;
+      CanliOyun.olay({ tip: 'hediye', kullanici: { id: 'h' + j, ad: 'Hediyeci' + j }, jeton: j });
+      const d = CanliOyun.durum();
+      cik[j] = { kart: d.kart, gul: D.gulBit > d.vurus, kafile: D.kafile.length - kafile, isik: d.isik, nur: d.nur };
+    }
+    return cik;
+  });
+  kontrol('1 jeton (Gül): adı kartta çıkar, gül yaprağı yağar', kd[1].kart === 'Hediyeci1' && kd[1].gul && kd[1].kafile === 0, kd[1]);
+  kontrol('10 jeton (Rosa): adına kafile katılır', kd[10].kart === 'Hediyeci10' && kd[10].kafile >= 2, kd[10]);
+  kontrol('100 jeton: Harem ışıkları yanar', kd[100].kart === 'Hediyeci100' && kd[100].isik, kd[100]);
+  kontrol('500 jeton: Kâbe nurlanır, büyük dua', kd[500].kart === 'Hediyeci500' && kd[500].nur, kd[500]);
+  await p.waitForTimeout(400);
+  await p.locator('#sahne').screenshot({ path: CIKTI + '/k-nur.png' });
+
+  // tur sayımı: yedi tur bitince tavaf tamam sayacı artar
+  const tur = await p.evaluate(async () => {
+    const T = CanliOyun._test, D = T.D;
+    document.getElementById('bosalt').click();
+    CanliOyun.olay({ tip: 'yorum', kullanici: { id: 't1', ad: 'Tavafçı' }, metin: 'Bismillah' });
+    const k = D.oy.get('t1');
+    const once = D.tamam;
+    // yürüyüşü hızlandır: vuruş saatini ileri al, her adımda bir kare bekle
+    for (let i = 0; i < 2600 && D.tamam === once; i++) {
+      T.vurusIlerle(1.2);
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    T.vurusCoz();
+    return { tamam: D.tamam - once, tur: k.tur };
+  });
+  kontrol('Yedi turu biten izleyicinin tavafı tamamlanır, sayaç artar', tur.tamam === 1, tur);
+
+  // beğeni hedefi geçilince pankart çıkar, hedef büyür
+  const beg = await p.evaluate(async () => {
+    const D = CanliOyun._test.D, h0 = D.begeniHedef;
+    CanliOyun.olay({ tip: 'begeni', kullanici: { id: 'b1', ad: 'Beğenen' }, adet: 500 });
+    CanliOyun.olay({ tip: 'begeni', kullanici: { id: 'b1', ad: 'Beğenen' }, adet: 500 });
+    await new Promise(r => setTimeout(r, 200));
+    return { h0, h1: D.begeniHedef, pankart: document.getElementById('pankart-yeri').textContent };
+  });
+  kontrol('Beğeni hedefi geçilince teşekkür pankartı çıkar, yeni hedef konur', beg.h1 > beg.h0 && /beğeni/.test(beg.pankart), beg);
+
+  // şarkı sırası: YouTube linki eklenir, sıra değişir, silinir; dosya adı HTML olarak yazılmaz
+  const sk = await p.evaluate(async () => {
+    document.querySelector('.sarki-katla').open = true;
+    const yt = document.querySelector('.sarki-yt input'), ekle = document.querySelector('.sarki-yt button');
+    yt.value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    ekle.click();
+    yt.value = 'https://youtu.be/aaaaaaaaaaa';
+    ekle.click();
+    yt.value = 'bu bir link değil';
+    ekle.click();
+    const sayi1 = document.querySelectorAll('.sarki-liste li').length;
+    const ilk = document.querySelector('.sarki-liste li .ad').textContent;
+    document.querySelectorAll('.sarki-liste li')[1].querySelectorAll('button')[1].click(); // ikinciyi yukarı
+    const yeniIlk = document.querySelector('.sarki-liste li .ad').textContent;
+    document.querySelector('.sarki-liste li').querySelectorAll('button')[3].click(); // sil
+    return { sayi1, ilk, yeniIlk, sayi2: document.querySelectorAll('.sarki-liste li').length, img: document.querySelectorAll('.sarki-liste img').length };
+  });
+  kontrol('Şarkı sırası: link eklenir, geçersiz link eklenmez, sıra değişir, silinir', sk.sayi1 === 2 && sk.ilk !== sk.yeniIlk && sk.sayi2 === 1 && sk.img === 0, sk);
+
+  kontrol('Tavaf testlerinde sayfada hata çıkmadı', hatalar.length === 0, hatalar.slice(0, 4).join(' | '));
+  await b.close();
+  process.exit(raporla(sonuc) ? 1 : 0);
+})().catch(e => { console.error('TEST ÇÖKTÜ', e); process.exit(1); });

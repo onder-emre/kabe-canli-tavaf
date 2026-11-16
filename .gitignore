@@ -1,0 +1,13 @@
+node_modules/
+test/cikti/
+dist/
+# Oyunlarin kendi hazir parcalari (oyunlar/<ad>/muzik/) depoya girmez: haklari sende kalir (docs/MUZIK.md).
+# Kural her derinlikte gecer (oyunlar/*/muzik/, paketlerin muzik/ klasoru); ortak bir kok muzik/ klasoru kullanilmaz.
+muzik/
+*.log
+.DS_Store
+Thumbs.db
+# Motorun kurulum kilidi (kopru.js, kütüphane inerken)
+.kurulum-kilidi.json
+# Penceresiz motorun günlüğü (kopru.js --gizli, BASLAT.bat)
+motor-gunlugu.txt
