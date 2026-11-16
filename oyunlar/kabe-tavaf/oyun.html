@@ -5873,6 +5873,7 @@ function oyunUst(dt) {
   sayaclarCiz(150);
   duaKartCiz(188, 116);
   hediyeKartlari(314, 86);
+  isimKartiCiz(314, 86);
 }
 function yaziAralik(cx, v) {
   if ('letterSpacing' in cx)
@@ -5988,11 +5989,9 @@ function sigdir(metin, x, y, en, punto, enAz, kalip) {
 function duaKartCiz(y, h) {
   const x = 22, w = GW - 44;
   cerceve(x, y, w, h);
-  const kart = D.kart && zaman - D.kart.t0 < D.kart.sure ? D.kart : null;
-  const kartA = kart ? clamp(Math.min((zaman - kart.t0) * 5, (kart.sure - (zaman - kart.t0)) * 3), 0, 1) : 0;
   // dua: DUA_VURUS vuruşta bir değişir, aradaki geçişte solup açılır
   const sira = Math.floor(Math.max(0, B) / DUA_VURUS), ic = (Math.max(0, B) % DUA_VURUS) / DUA_VURUS;
-  const dua = DUALAR[sira % DUALAR.length], gor = clamp(Math.min(ic * 12, (1 - ic) * 12), 0, 1) * (1 - kartA * 0.92);
+  const dua = DUALAR[sira % DUALAR.length], gor = clamp(Math.min(ic * 12, (1 - ic) * 12), 0, 1);
   c.globalAlpha = gor;
   c.textAlign = 'center';
   yaziAralik(c, '3px');
@@ -6009,12 +6008,18 @@ function duaKartCiz(y, h) {
   c.fillStyle = RENK.acik;
   sigdir(dua.anlam, GW / 2, y + 102, w - 46, 15, 11, p => '400 ' + p + 'px ' + GOVDE_YAZI);
   c.globalAlpha = 1;
-  if (kart)
-    isimKarti(kart, x, y, w, h, kartA);
 }
-// Hediye atanın adı: dua kartının ortasında büyük, ikonuyla
+// Hediye atanın adı: dua kartını örtmez. Duanın hemen altında, dört hediye kartının satırını birkaç saniyeliğine
+// kaplar (o satırda etiket, balon ya da başka bir yazı çizilmez), sonra hediye kartları geri görünür.
+function isimKartiCiz(y, h) {
+  const kart = D.kart && zaman - D.kart.t0 < D.kart.sure ? D.kart : null;
+  if (!kart)
+    return;
+  const a = clamp(Math.min((zaman - kart.t0) * 5, (kart.sure - (zaman - kart.t0)) * 3), 0, 1);
+  isimKarti(kart, 18, y, GW - 36, h, a);
+}
 function isimKarti(k, x, y, w, h, a) {
-  const kw = Math.min(w - 40, 520), kh = h - 26, kx = (GW - kw) / 2, ky = y + 13;
+  const kw = w, kh = h, kx = x, ky = y;
   const n = k.tip === 'nur', parla = 0.6 + 0.4 * Math.sin(zaman * 5);
   c.globalAlpha = a;
   c.save();
@@ -6024,21 +6029,21 @@ function isimKarti(k, x, y, w, h, a) {
   c.translate(-GW / 2, -(ky + kh / 2));
   c.beginPath();
   c.roundRect(kx, ky, kw, kh, 16);
-  c.fillStyle = n ? 'rgba(46,34,8,0.96)' : 'rgba(14,20,50,0.96)';
+  c.fillStyle = n ? 'rgb(46,34,8)' : 'rgb(14,20,50)';
   c.fill();
   c.strokeStyle = n ? 'rgba(255,226,140,' + parla + ')' : 'rgba(232,195,106,0.8)';
   c.lineWidth = n ? 3 : 2;
   c.stroke();
-  hediyeIkon(k.tip, kx + 52, ky + kh / 2, 24);
+  hediyeIkon(k.tip, kx + 70, ky + kh / 2, 24);
   c.textAlign = 'center';
   c.fillStyle = n ? '#ffe7a3' : '#ffd98a';
   c.shadowColor = 'rgba(255,214,120,0.7)';
   c.shadowBlur = 12;
-  sigdir(k.ad, GW / 2 + 26, ky + kh / 2 - 4, kw - 130, 38, 20, p => '700 ' + p + 'px ' + BASLIK_YAZI);
+  sigdir(k.ad, GW / 2 + 26, ky + kh / 2 - 4, kw - 190, 38, 20, p => '700 ' + p + 'px ' + BASLIK_YAZI);
   c.shadowBlur = 0;
   c.font = '500 17px ' + GOVDE_YAZI;
   c.fillStyle = RENK.acik;
-  c.fillText(k.satir1 + ' · ' + k.satir2, GW / 2 + 26, ky + kh / 2 + 28, kw - 130);
+  c.fillText(k.satir1 + ' · ' + k.satir2, GW / 2 + 26, ky + kh / 2 + 28, kw - 190);
   c.restore();
   c.globalAlpha = 1;
 }
