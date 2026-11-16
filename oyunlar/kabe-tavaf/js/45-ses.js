@@ -76,6 +76,7 @@ function sesKartKur(yer, ayrinti) {
       SES[k] = !SES[k];
       sesKaydet();
       sesDugmeYaz();
+      sesUygula();
     };
     sesDugmeler[k] = d;
     kutu.append(d);
@@ -88,6 +89,7 @@ function sesKartKur(yer, ayrinti) {
     SES.ney = SES.ritim = SES.dem = SES.efekt = ac;
     sesKaydet();
     sesDugmeYaz();
+    sesUygula();
   };
   sesDugmeler.hepsi = hepsi;
   kutu.append(hepsi);
@@ -101,6 +103,7 @@ function sesKartKur(yer, ayrinti) {
     SES.sarkidaSus = !SES.sarkidaSus;
     sesKaydet();
     sesDugmeYaz();
+    sesUygula();
   };
   sesDugmeler.sarkidaSus = sus;
   if (ayrinti)
@@ -143,3 +146,10 @@ function sekmeDenetle() {
   sonAcik = acik;
   sonSarki = sarki;
 }
+
+// Sekme arka plandayken tarayıcı kare çizmez (oyunUst çağrılmaz) ama müzik çalmaya devam eder: ses ayarları ve tek
+// sekme kuralı kareye bağlı kalmasın diye ayrıca zamanlayıcıyla da uygulanır.
+setInterval(() => {
+  sesUygula();
+  sekmeDenetle();
+}, 250);
