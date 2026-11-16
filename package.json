@@ -4,6 +4,11 @@
   "private": true,
   "description": "Kâbe Canlı Tavaf: TikTok canlı yayını için etkileşimli tavaf sahnesi. Yorum yazan tavafa katılır, hediye atanın adı nurlanır.",
   "license": "MIT",
+  "author": "Emre",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onder-emre/kabe-canli-tavaf.git"
+  },
   "engines": {
     "node": ">=18"
   },

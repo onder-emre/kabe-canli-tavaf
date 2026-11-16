@@ -58,4 +58,15 @@ değildir.
 
 ## Lisans
 
-MIT. Ayrıntı: [LICENSE](LICENSE).
+Bu projenin kodu MIT lisanslıdır; ayrıntı [LICENSE](LICENSE) dosyasında. Çekirdek, MIT lisanslı bir altyapıdan
+türetilmiştir ve özgün telif bildirimi LICENSE dosyasında korunur.
+
+Üçüncü taraf bileşenler (bu depoya dahil değil, çalışırken yüklenir):
+
+| Bileşen | Ne için | Lisans |
+| --- | --- | --- |
+| [tiktok-live-connector](https://www.npmjs.com/package/tiktok-live-connector) | TikTok canlı yayınındaki yorum, beğeni ve hediyeleri okumak | AGPL-3.0 |
+| Google Fonts: Rubik, Paytone One, Amiri, Cormorant Garamond | Yazı tipleri | SIL Open Font License |
+| YouTube IFrame oynatıcısı | Yayıncının seçtiği şarkıları çalmak | YouTube Hizmet Şartları |
+
+Kur'an ayetleri ve dualar kamu malıdır. Sahnedeki bütün çizimler ve oyunun ney-kudüm müziği kodla üretilir.

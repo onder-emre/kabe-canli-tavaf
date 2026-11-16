@@ -41,9 +41,7 @@ exit /b 1
 :nodeyok
 echo.
 echo  Node.js bulunamadi. Oyunlarin motoru icin gerekli, ucretsiz bir program.
-echo  En kolayi: hicbir sey kurmadan calisan hazir paketi indir:
-echo    https://github.com/KULLANICI/kabe-canli-tavaf/releases
-echo  Ya da Node.js kur, sonra BASLAT.bat dosyasina yeniden cift tikla:
+echo  Node.js kur, sonra BASLAT.bat dosyasina yeniden cift tikla:
 echo    https://nodejs.org/dist/v24.15.0/node-v24.15.0-x64.msi
 echo    (node.exe ya da Standalone Binary degil, .msi uzantili kurulum dosyasi)
 set "YARDIM=%~dp0node-yok.html"
