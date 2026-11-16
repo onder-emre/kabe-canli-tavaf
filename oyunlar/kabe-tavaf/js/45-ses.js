@@ -47,7 +47,10 @@ function sesUygula() {
   s.kanal.ezgi.setTargetAtTime(SES.ney ? o.ezgi : 0, t, 0.05);
   s.kanal.davul.setTargetAtTime(SES.ritim ? o.davul : 0, t, 0.05);
   s.kanal.eslik.setTargetAtTime(SES.dem ? o.eslik : 0, t, 0.05);
-  s.efektYol.gain.setTargetAtTime(SES.efekt && !(sarki && SES.sarkidaSus) ? o.efekt : 0, t, 0.05);
+  // Efekt yolu yalnız zil çalarken işlenir; boştayken zamanlanmış geçiş bekler ve okunan değer eski kalır.
+  // Bu yüzden değeri doğrudan yazılır: sonraki zil kesin olarak yeni düzeyle çalar.
+  s.efektYol.gain.cancelScheduledValues(t);
+  s.efektYol.gain.value = SES.efekt && !(sarki && SES.sarkidaSus) ? o.efekt : 0;
 }
 // Çekirdek testi bu oyunda zilin şarkı çalarken susmasını bekleyebilsin
 Object.defineProperty(window, 'OYUN_SARKIDA_EFEKT_SUS', { get: () => !!SES.sarkidaSus, configurable: true });
