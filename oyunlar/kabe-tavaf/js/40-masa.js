@@ -17,7 +17,7 @@ function masaKur() {
   const katla = document.createElement('details');
   katla.className = 'sarki-katla';
   const ozetS = document.createElement('summary');
-  ozetS.textContent = 'Şarkı sırası ve tavafçılar';
+  ozetS.textContent = 'Şarkı sırası ve diğer ayarlar';
   katla.append(ozetS);
   const kutu = document.createElement('div');
   kutu.className = 'sarki-kutu';
@@ -79,6 +79,7 @@ function masaKur() {
   kutu.append(baslik, ipucu, dosyaDug, dosya, ytSatir, ol, dugmeler, ileti, npc);
   katla.append(kutu);
   yer.append(katla);
+  sesKartKur(yer, kutu);
   SARKI.el = { ol, ileti, bas };
   const st = document.createElement('style');
   st.textContent = `

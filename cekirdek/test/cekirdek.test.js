@@ -1016,9 +1016,10 @@ addEventListener('message', e => { if (e.data === 'soru') parent.postMessage({ t
       CanliOyun.olay({ tip: 'hediye', kullanici: { id: 'ytzil', ad: 'Zil' }, jeton: 150 });
       const zil = await tepe(450);
       m.ses.son.disconnect(a);
-      return { sessiz, zil, muzikYol: +m.ses.muzikYol.gain.value.toFixed(4), efektYol: m.ses.efektYol.gain.value, sus: m.disSessiz, caliyor: CanliOyun.youtube.durum().caliyor };
+      return { sessiz, zil, muzikYol: +m.ses.muzikYol.gain.value.toFixed(4), efektYol: m.ses.efektYol.gain.value, sus: m.disSessiz, caliyor: CanliOyun.youtube.durum().caliyor, efektSus: !!window.OYUN_SARKIDA_EFEKT_SUS };
     });
-    kontrol('İki yol: YouTube çalarken müzik yolu 0, çıkış sessiz; hediye zili efekt yolundan çıkışa ulaşır', canli.caliyor && canli.sus && canli.muzikYol < 0.01 && canli.sessiz < 0.003 && canli.zil > 0.02, canli);
+    // Oyun "şarkı çalarken oyun sesleri sussun" seçeneğini açtıysa (window.OYUN_SARKIDA_EFEKT_SUS) zil de susar.
+    kontrol('İki yol: YouTube çalarken müzik yolu 0, çıkış sessiz; hediye zili efekt yolundan çıkışa ulaşır (oyun şarkıda efektleri susturuyorsa zil de sessiz)', canli.caliyor && canli.sus && canli.muzikYol < 0.01 && canli.sessiz < 0.003 && (canli.efektSus ? canli.zil < 0.003 : canli.zil > 0.02), canli);
     // 8. YouTube sesi, Durdur, YouTube'da duraklatma, Oyunun müziğine dön
     const dur = await yq.evaluate(async () => {
       const m = CanliOyun._test.muzik, T = window.__ytSahte, bekle = ms => new Promise(z => setTimeout(z, ms)), r = {};

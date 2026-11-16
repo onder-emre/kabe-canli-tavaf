@@ -29,6 +29,8 @@ const DUA_VURUS = 28;   // her dua kaç vuruş kalır
 let basBoya = null;
 let sarkiGorunur = false;
 function oyunUst(dt) {
+  sesUygula();
+  sekmeDenetle();
   // çalan şarkının adı (sahnenin sol üstünde) yalnız yayıncının kendi şarkısı çalarken görünür
   if (sarkiGorunur !== !!muzik.disAd) {
     sarkiGorunur = !!muzik.disAd;
