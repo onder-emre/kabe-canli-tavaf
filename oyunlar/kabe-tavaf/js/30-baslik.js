@@ -394,6 +394,7 @@ function sahneStilKur() {
   s.id = 'kabe-stil';
   s.textContent = `
 .hud-ust{display:none}
+.ses-cagri{display:none!important}
 .cosku{top:40.3cqh;left:3cqw;right:auto;width:44cqw;text-align:left;opacity:0;pointer-events:none}
 .cosku h2,.cosku .cubuk{display:none}
 .cosku .bilgi{font-size:2.1cqw;opacity:.85;color:#3b3220;text-shadow:none;background:rgba(251,245,228,.7);
@@ -423,6 +424,14 @@ function sahneStilKur() {
 .pankart .b1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;color:#fff3d2}
 `;
   document.head.append(s);
+  // Sahnedeki "Ney sesini başlat" düğmesi gizli: ses masadan açılıp kapanır. Yalnız sahnenin gösterildiği sayfada
+  // (#yayin) masa yoktur; orada sahneye ilk tıklama sesi bir kez açar (tarayıcı sesi ancak bir tıklamayla başlatır).
+  const sahne = document.getElementById('sahne');
+  if (sahne)
+    sahne.addEventListener('pointerdown', () => {
+      if (!muzik.acik && document.getElementById('ses-dugme'))
+        document.getElementById('ses-dugme').click();
+    }, { once: true });
   // Başlık ve dua yazı tipleri (Google Fonts; yüklenmezse yedek yazı tipleri). Amiri: Arapça, Cormorant: başlık.
   if (!window.OYUN_YAZI_KAPALI && !document.getElementById('kabe-yazi')) {
     const l = document.createElement('link');
