@@ -124,7 +124,7 @@ function oyunHediye(k, jeton, kademe) {
   D.hediyeKart = { tip, b: B };
   const KART = {
     gul: ['Gül gönderdi', 'İsmi nurlandı'],
-    kafile: ['Rosa gönderdi', 'Adına kafile katıldı'],
+    kafile: ['Gül demeti gönderdi', 'Kafileye katıldı'],
     isik: ['Harem ışıklarını yaktı', 'Allah razı olsun'],
     nur: ['Kâbe nurlandı', 'Adına büyük dua']
   }[tip];

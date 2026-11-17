@@ -71,7 +71,7 @@ function oyunUst(dt) {
   sayaclarCiz(150);
   duaKartCiz(188, 116);
   hediyeKartlari(314, 86);
-  isimKartiCiz(314, 86);
+  isimKartiCiz(GH - 84, 66);
 }
 function yaziAralik(cx, v) {
   if ('letterSpacing' in cx)
@@ -207,14 +207,14 @@ function duaKartCiz(y, h) {
   sigdir(dua.anlam, GW / 2, y + 102, w - 46, 15, 11, p => '400 ' + p + 'px ' + GOVDE_YAZI);
   c.globalAlpha = 1;
 }
-// Hediye atanın adı: dua kartını örtmez. Duanın hemen altında, dört hediye kartının satırını birkaç saniyeliğine
-// kaplar (o satırda etiket, balon ya da başka bir yazı çizilmez), sonra hediye kartları geri görünür.
+// Hediye atanın adı: sahnenin altındaki boş zeminde, tavaf halkasının altında çıkar. Dua ve hediye kartları
+// (hangi hediye ne yapar) hep görünür kalır; arka arkaya hediye gelse de üstleri kapanmaz.
 function isimKartiCiz(y, h) {
   const kart = D.kart && zaman - D.kart.t0 < D.kart.sure ? D.kart : null;
   if (!kart)
     return;
-  const a = clamp(Math.min((zaman - kart.t0) * 5, (kart.sure - (zaman - kart.t0)) * 3), 0, 1);
-  isimKarti(kart, 18, y, GW - 36, h, a);
+  const a = clamp(Math.min((zaman - kart.t0) * 5, (kart.sure - (zaman - kart.t0)) * 3), 0, 1), w = 480;
+  isimKarti(kart, (GW - w) / 2, y, w, h, a);
 }
 function isimKarti(k, x, y, w, h, a) {
   const kw = w, kh = h, kx = x, ky = y;
@@ -232,16 +232,16 @@ function isimKarti(k, x, y, w, h, a) {
   c.strokeStyle = n ? 'rgba(255,226,140,' + parla + ')' : 'rgba(232,195,106,0.8)';
   c.lineWidth = n ? 3 : 2;
   c.stroke();
-  hediyeIkon(k.tip, kx + 70, ky + kh / 2, 24);
+  hediyeIkon(k.tip, kx + 42, ky + kh / 2, 18);
   c.textAlign = 'center';
   c.fillStyle = n ? '#ffe7a3' : '#ffd98a';
   c.shadowColor = 'rgba(255,214,120,0.7)';
   c.shadowBlur = 12;
-  sigdir(k.ad, GW / 2 + 26, ky + kh / 2 - 4, kw - 190, 38, 20, p => '700 ' + p + 'px ' + BASLIK_YAZI);
+  sigdir(k.ad, GW / 2 + 22, ky + kh / 2 + 2, kw - 120, 30, 18, p => '700 ' + p + 'px ' + BASLIK_YAZI);
   c.shadowBlur = 0;
-  c.font = '500 17px ' + GOVDE_YAZI;
+  c.font = '500 14px ' + GOVDE_YAZI;
   c.fillStyle = RENK.acik;
-  c.fillText(k.satir1 + ' · ' + k.satir2, GW / 2 + 26, ky + kh / 2 + 28, kw - 190);
+  c.fillText(k.satir1 + ' · ' + k.satir2, GW / 2 + 22, ky + kh / 2 + 24, kw - 120);
   c.restore();
   c.globalAlpha = 1;
 }
@@ -318,7 +318,7 @@ function hediyeKartlari(y, h) {
     hediyeIkon(kd.tip, x + 22, y + 24, 12);
     c.textAlign = 'left';
     c.fillStyle = '#ffe3a0';
-    const ad = kd.tip === 'kafile' ? 'Rosa' : kd.tip === 'isik' ? kd.min + '+ jeton' : kd.tip === 'nur' ? kd.min + '+ jeton' : kd.ad;
+    const ad = kd.tip === 'kafile' ? 'Gül demeti' : kd.tip === 'isik' ? kd.min + '+ jeton' : kd.tip === 'nur' ? kd.min + '+ jeton' : kd.ad;
     sigdirSol(ad, x + 40, y + 24, w - 46, 18, 12, p => '600 ' + p + 'px ' + BASLIK_YAZI);
     c.font = '500 11px ' + GOVDE_YAZI;
     c.fillStyle = RENK.soluk;
@@ -394,8 +394,7 @@ function sahneStilKur() {
   s.id = 'kabe-stil';
   s.textContent = `
 .hud-ust{display:none}
-.cosku{top:40.3cqh;left:3cqw;right:auto;width:44cqw;text-align:left;opacity:0;transition:opacity .4s}
-body.kabe-sarki .cosku{opacity:1}
+.cosku{top:40.3cqh;left:3cqw;right:auto;width:44cqw;text-align:left;opacity:0;pointer-events:none}
 .cosku h2,.cosku .cubuk{display:none}
 .cosku .bilgi{font-size:2.1cqw;opacity:.85;color:#3b3220;text-shadow:none;background:rgba(251,245,228,.7);
   border-radius:1.2cqw;padding:.5cqw 1.2cqw;display:inline-block}

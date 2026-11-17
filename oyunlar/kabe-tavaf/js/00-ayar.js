@@ -20,7 +20,7 @@ const OYUN = {
   kademe: [
     { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adına büyük dua okunur', kisa: 'Kâbe nurlanır, büyük dua' },
     { min: 100, ad: 'Harem ışıkları', tip: 'isik', etki: 'Harem ışıkları yanar, minareler parlar', kisa: 'Harem ışıkları yanar' },
-    { min: 10, ad: 'Kafile', tip: 'kafile', etki: 'Gönderenin adına bir kafile tavafa katılır', kisa: 'Adına kafile katılır' },
+    { min: 10, ad: 'Kafile', tip: 'kafile', etki: 'Gönderenin adına bir kafile tavafa katılır', kisa: 'Kafileye katılır' },
     { min: 1, ad: 'Gül', tip: 'gul', etki: 'Gönderenin adı nurlanır, gül yaprakları yağar', kisa: 'İsmin nurlanır, gül yağar' }
   ],
   tohum: [['Özdemir', 183], ['ItsMuko', 121], ['SOYDAN', 100], ['Hesam2', 80], ['zeynep', 50], ['Derya', 10], ['Kemal', 5], ['Naz', 1], ['Hüseyin', 0], ['SEMANUR', 0], ['ireemerdem', 0], ['Valeria', 0]],
