@@ -1273,7 +1273,7 @@ function tiktokBaslat(kullaniciAdi = KULLANICI) {
 function denemeBaslat() {
   // Kimlik "deneme:ad": TikTok adında iki nokta olamaz, canlıya geçerken temizlenen sahte izleyici gerçek biriyle karışmaz.
   const adlar = ['ayse', 'memo', 'zeyno', 'bekir', 'elif', 'cano', 'sude', 'baran'];
-  const sozler = ['selam!', 'ben de geldim', 'haydi haydi', 'selamlar', 'buradayım'];
+  const sozler = ['Amin', 'Allahu Ekber', 'Lebbeyk Allahümme lebbeyk', 'Subhanallah', 'Elhamdülillah', 'Bismillah', 'Allah kabul etsin', 'Maşallah'];
   const sec = a => a[Math.floor(Math.random() * a.length)];
   durumBildir('Deneme kipi: olaylar sahte, TikTok\'a bağlanılmadı.', 'deneme');
   // Sahte hediye kimlikleri "deneme-" öneklidir, gerçek bir TikTok numarasıyla karışmaz; sırayla gelir (paneldeki

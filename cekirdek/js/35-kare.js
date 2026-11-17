@@ -5,6 +5,7 @@
  */
 // İsteğe bağlı kancalar: oyun tanımlamadıysa yok sayılır (typeof, tanımsız adda da hata vermez).
 const KANCA_UST = typeof oyunUst === 'function' ? oyunUst : null;
+const KANCA_SON = typeof oyunSon === 'function' ? oyunSon : null; // isteğe bağlı: etiketlerden sonra, en üstte çizilir
 const KANCA_EK_ADLAR = typeof oyunEkAdlar === 'function' ? oyunEkAdlar : null;
 let sonKare = 0, kareSay = 0;
 // Yalnız testler ve kare-cek için: doluysa B müzikten okunmaz, bu değerde durur (CanliOyun._test.vurusDondur).
@@ -97,6 +98,8 @@ function kareIc(simdiMs) {
   if (KANCA_UST)
     KANCA_UST(dt);
   etiketCiz(KANCA_EK_ADLAR ? KANCA_EK_ADLAR() || [] : []);
+  if (KANCA_SON)
+    KANCA_SON(dt);
   parcaCiz(dt);
   kenarKarart();
   // sahne üstü yazılar

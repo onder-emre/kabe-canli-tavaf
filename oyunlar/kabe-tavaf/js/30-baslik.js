@@ -350,6 +350,45 @@ function satirla(metin, x, y, en, ara, font) {
     c.fillText(k.slice(i).join(' '), x, y + ara + 3, en);
 }
 
+// Adsız tavafçıların dua balonu: izleyici balonlarıyla aynı biçimde, biraz küçük; ad etiketlerinin üstünde çizilir
+// (oyunSon, etiketlerden sonra çalışır).
+function oyunSon() {
+  duaBalonlari();
+}
+function duaBalonlari() {
+  c.font = '700 17px ' + GOVDE_YAZI;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  for (const k of [...D.npc, ...D.kafile]) {
+    if (!k.dua || !k.et)
+      continue;
+    const t = zaman - k.dua.t0;
+    if (t > DUA_SURE)
+      continue;
+    const a = clamp(Math.min(t * 5, (DUA_SURE - t) * 3), 0, 1), x = k.et.x, y = k.et.y - 8 - (1 - a) * 6;
+    if (y - 34 < ALAN_UST || y > ALAN_ALT)
+      continue;
+    const w = c.measureText(k.dua.m).width + 22, h = 30, bx = clamp(x, w / 2 + 8, GW - w / 2 - 8);
+    c.globalAlpha = a;
+    c.fillStyle = RENK.vurgu;
+    c.strokeStyle = MUREKKEP;
+    c.lineWidth = 2.2;
+    c.beginPath();
+    c.roundRect(bx - w / 2, y - h, w, h, 12);
+    c.fill();
+    c.stroke();
+    c.beginPath();
+    c.moveTo(x - 7, y - 2);
+    c.lineTo(x, y + 7);
+    c.lineTo(x + 7, y - 2);
+    c.stroke();
+    c.fill();
+    c.fillStyle = MUREKKEP;
+    c.fillText(k.dua.m, bx, y - h / 2 + 1);
+  }
+  c.globalAlpha = 1;
+  c.textBaseline = 'alphabetic';
+}
 // Tur rozeti: adın sağında "3/7". Etiketin kutusu çekirdekte bir önceki karede yazılır; yürüyüş yavaş olduğu için
 // bir kare geriden gelmesi gözle görülmez.
 function turRozetleri() {

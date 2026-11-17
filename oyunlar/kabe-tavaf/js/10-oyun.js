@@ -269,6 +269,7 @@ function oyunGuncelle(dt) {
   // gidenler
   D.npc = D.npc.filter(n => !(n.cikiyor && n.tr > DIS_R + 0.3));
   D.kafile = D.kafile.filter(n => !(n.cikiyor && n.tr > DIS_R + 0.3));
+  duaSoyle();
   // gül yaprakları
   if (B < D.gulBit && !azHareket)
     for (let i = 0; i < 2; i++)
@@ -376,4 +377,23 @@ function oyunKamera() {
     odak: [[-KABE_G / 2, -KABE_D / 2, 1], [KABE_G / 2, -KABE_D / 2, 1], [0, KABE_D / 2, 1]],
     odakEn: 1.9
   };
+}
+
+/* ---- adsız tavafçıların duaları ----
+ * Adsız tavafçılar ve kafile üyeleri ara sıra kısa bir dua söyler (Amin, Allahu Ekber, Lebbeyk …): başlarının
+ * üstünde küçük bir balon olarak çıkar (çizimi 30-baslik.js, duaBalonlari). Aynı anda en çok üç balon olur.
+ * İzleyicilerin balonları onların gerçek yorumlarıdır; onlara dokunulmaz.
+ */
+const DUA_SURE = 3.2, DUA_EN_COK = 3;
+let duaSonra = 0;
+function duaSoyle() {
+  if (zaman < duaSonra)
+    return;
+  duaSonra = zaman + 1.4 + Math.random() * 2.2;
+  const adaylar = [...D.npc, ...D.kafile].filter(k => !k.cikiyor && k.et && k.trH < DIS_R - 0.5 && Math.abs(k.tr - k.trH) < 0.15 && !(k.dua && zaman - k.dua.t0 < DUA_SURE + 2));
+  const acik = [...D.npc, ...D.kafile].filter(k => k.dua && zaman - k.dua.t0 < DUA_SURE).length;
+  if (!adaylar.length || acik >= DUA_EN_COK)
+    return;
+  const k = adaylar[Math.floor(Math.random() * adaylar.length)], soz = OYUN.duaSoz || ['Amin'];
+  k.dua = { m: soz[Math.floor(Math.random() * soz.length)], t0: zaman };
 }

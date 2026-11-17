@@ -672,7 +672,9 @@ const OYUN = {
   ],
   tohum: [['Özdemir', 183], ['ItsMuko', 121], ['SOYDAN', 100], ['Hesam2', 80], ['zeynep', 50], ['Derya', 10], ['Kemal', 5], ['Naz', 1], ['Hüseyin', 0], ['SEMANUR', 0], ['ireemerdem', 0], ['Valeria', 0]],
   sahteAd: ['Fatih', 'zeynep', 'Hüseyin', 'Kemal', 'Naz', 'SEMANUR', 'ireemerdem', 'Valeria', 'Derya', 'KATAR27', 'elkoahmad', 'Malick', 'habab114', 'Fatima', 'senakavacnn', 'Elis', 'Bellnay', 'Emir.Mehmet', 'Baghlan68', 'David', 'Hesam2', 'Özdemir', 'ItsMuko', 'SOYDAN', 'yarwn', 'İrem', 'Ayşe_nur', 'muhammed.33', 'Büşra', 'Abdullah', 'Rukiye', 'Yusuf', 'Meryem.k', 'Hatice', 'Ömer_faruk', 'Elif', 'Bilal', 'Sümeyye', 'Hamza', 'Zehra', 'İbrahim', 'Esma', 'Selim', 'Kübra'],
-  sahteYorum: ['Bismillahirrahmanirrahim', 'Lebbeyk Allahümme lebbeyk', 'Allah kabul etsin', 'ben de geldim', 'amin', 'Elhamdülillah', 'Maşallah', 'annem için dua edin', 'İnşallah bir gün gideceğim', 'Selamün aleyküm', 'Allahu Ekber', 'Subhanallah', 'rabbim nasip etsin', 'babam için', 'amin amin', 'dualarınızı bekliyorum', 'Allah razı olsun', 'Medine’ye selam'],
+  sahteYorum: ['Bismillahirrahmanirrahim', 'Lebbeyk Allahümme lebbeyk', 'Allah kabul etsin', 'Amin', 'Elhamdülillah', 'Maşallah', 'annem için dua edin', 'İnşallah bir gün gideceğim', 'Selamün aleyküm', 'Allahu Ekber', 'Subhanallah', 'Rabbim nasip etsin', 'babam için dua', 'Amin amin', 'La ilahe illallah', 'Allah razı olsun', 'Estağfirullah', 'Ya Rabbi', 'Amin ya Rabbi', 'Sübhanallahi ve bihamdihi'],
+  // Adsız tavafçıların ve kafilenin ara sıra söylediği kısa dualar (sahnede küçük balon)
+  duaSoz: ['Amin', 'Allahu Ekber', 'Lebbeyk Allahümme lebbeyk', 'Subhanallah', 'Elhamdülillah', 'Bismillah', 'Allah kabul etsin', 'Maşallah', 'Rabbim nasip etsin', 'La ilahe illallah', 'Estağfirullah', 'Ya Rabbi', 'Amin ya Rabbi', 'Allah razı olsun', 'Sübhanallahi ve bihamdihi'],
   // Gece Harem'i: lacivert gök, altın ışık, beyaz mermer. Panel çekirdeğin koyu temasında kalır.
   renk: { zemin: '#0b1330', zemin2: '#15214a', zemin3: '#26366c', cizgi: '#3b4d88', vurgu: '#e8c36a', sicak: '#a87a22', serin: '#63c9b6', acik: '#fbf5e4', soluk: '#b9c1dd' },
   // Yukarıdan bakan kamera: tavaf halkasının tamamı ve Kâbe birlikte görünsün.
@@ -3624,6 +3626,7 @@ function gokCiz(g) {
  */
 // İsteğe bağlı kancalar: oyun tanımlamadıysa yok sayılır (typeof, tanımsız adda da hata vermez).
 const KANCA_UST = typeof oyunUst === 'function' ? oyunUst : null;
+const KANCA_SON = typeof oyunSon === 'function' ? oyunSon : null; // isteğe bağlı: etiketlerden sonra, en üstte çizilir
 const KANCA_EK_ADLAR = typeof oyunEkAdlar === 'function' ? oyunEkAdlar : null;
 let sonKare = 0, kareSay = 0;
 // Yalnız testler ve kare-cek için: doluysa B müzikten okunmaz, bu değerde durur (CanliOyun._test.vurusDondur).
@@ -3716,6 +3719,8 @@ function kareIc(simdiMs) {
   if (KANCA_UST)
     KANCA_UST(dt);
   etiketCiz(KANCA_EK_ADLAR ? KANCA_EK_ADLAR() || [] : []);
+  if (KANCA_SON)
+    KANCA_SON(dt);
   parcaCiz(dt);
   kenarKarart();
   // sahne üstü yazılar
@@ -5104,6 +5109,7 @@ function oyunGuncelle(dt) {
   // gidenler
   D.npc = D.npc.filter(n => !(n.cikiyor && n.tr > DIS_R + 0.3));
   D.kafile = D.kafile.filter(n => !(n.cikiyor && n.tr > DIS_R + 0.3));
+  duaSoyle();
   // gül yaprakları
   if (B < D.gulBit && !azHareket)
     for (let i = 0; i < 2; i++)
@@ -5211,6 +5217,25 @@ function oyunKamera() {
     odak: [[-KABE_G / 2, -KABE_D / 2, 1], [KABE_G / 2, -KABE_D / 2, 1], [0, KABE_D / 2, 1]],
     odakEn: 1.9
   };
+}
+
+/* ---- adsız tavafçıların duaları ----
+ * Adsız tavafçılar ve kafile üyeleri ara sıra kısa bir dua söyler (Amin, Allahu Ekber, Lebbeyk …): başlarının
+ * üstünde küçük bir balon olarak çıkar (çizimi 30-baslik.js, duaBalonlari). Aynı anda en çok üç balon olur.
+ * İzleyicilerin balonları onların gerçek yorumlarıdır; onlara dokunulmaz.
+ */
+const DUA_SURE = 3.2, DUA_EN_COK = 3;
+let duaSonra = 0;
+function duaSoyle() {
+  if (zaman < duaSonra)
+    return;
+  duaSonra = zaman + 1.4 + Math.random() * 2.2;
+  const adaylar = [...D.npc, ...D.kafile].filter(k => !k.cikiyor && k.et && k.trH < DIS_R - 0.5 && Math.abs(k.tr - k.trH) < 0.15 && !(k.dua && zaman - k.dua.t0 < DUA_SURE + 2));
+  const acik = [...D.npc, ...D.kafile].filter(k => k.dua && zaman - k.dua.t0 < DUA_SURE).length;
+  if (!adaylar.length || acik >= DUA_EN_COK)
+    return;
+  const k = adaylar[Math.floor(Math.random() * adaylar.length)], soz = OYUN.duaSoz || ['Amin'];
+  k.dua = { m: soz[Math.floor(Math.random() * soz.length)], t0: zaman };
 }
 
 /* ── oyunlar/kabe-tavaf/js/15-kilik.js ── */
@@ -6215,6 +6240,45 @@ function satirla(metin, x, y, en, ara, font) {
     c.fillText(k.slice(i).join(' '), x, y + ara + 3, en);
 }
 
+// Adsız tavafçıların dua balonu: izleyici balonlarıyla aynı biçimde, biraz küçük; ad etiketlerinin üstünde çizilir
+// (oyunSon, etiketlerden sonra çalışır).
+function oyunSon() {
+  duaBalonlari();
+}
+function duaBalonlari() {
+  c.font = '700 17px ' + GOVDE_YAZI;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  for (const k of [...D.npc, ...D.kafile]) {
+    if (!k.dua || !k.et)
+      continue;
+    const t = zaman - k.dua.t0;
+    if (t > DUA_SURE)
+      continue;
+    const a = clamp(Math.min(t * 5, (DUA_SURE - t) * 3), 0, 1), x = k.et.x, y = k.et.y - 8 - (1 - a) * 6;
+    if (y - 34 < ALAN_UST || y > ALAN_ALT)
+      continue;
+    const w = c.measureText(k.dua.m).width + 22, h = 30, bx = clamp(x, w / 2 + 8, GW - w / 2 - 8);
+    c.globalAlpha = a;
+    c.fillStyle = RENK.vurgu;
+    c.strokeStyle = MUREKKEP;
+    c.lineWidth = 2.2;
+    c.beginPath();
+    c.roundRect(bx - w / 2, y - h, w, h, 12);
+    c.fill();
+    c.stroke();
+    c.beginPath();
+    c.moveTo(x - 7, y - 2);
+    c.lineTo(x, y + 7);
+    c.lineTo(x + 7, y - 2);
+    c.stroke();
+    c.fill();
+    c.fillStyle = MUREKKEP;
+    c.fillText(k.dua.m, bx, y - h / 2 + 1);
+  }
+  c.globalAlpha = 1;
+  c.textBaseline = 'alphabetic';
+}
 // Tur rozeti: adın sağında "3/7". Etiketin kutusu çekirdekte bir önceki karede yazılır; yürüyüş yavaş olduğu için
 // bir kare geriden gelmesi gözle görülmez.
 function turRozetleri() {
