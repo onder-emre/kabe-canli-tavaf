@@ -7,7 +7,7 @@ TikTok canlı yayını için etkileşimli tavaf sahnesi. İzleyiciler yorum, be�
 | Yorum yazar | Tavafa katılır, Kâbe'nin etrafında döner; adının yanında tur sayısı (3/7). Yedinci turda tavafı tamamlanır. |
 | Beğeni atar | Beğeni hedefi dolar; hedefe ulaşınca teşekkür yazısı çıkar. |
 | Gül (1 jeton) | Adı büyük kartta çıkar, gül yaprakları yağar. |
-| Rosa (10 jeton) | Adına bir kafile tavafa katılır. |
+| Gül demeti (10 jeton) | Adına bir kafile tavafa katılır. |
 | 100+ jeton | Harem ışıkları ve minareler yanar. |
 | 500+ jeton | Kâbe nurlanır, adına büyük dua kartı. |
 | En çok hediye atan | "Gönül verenler"in başında, Kâbe'ye en yakın halkada yürür. |
@@ -27,10 +27,25 @@ Gerekli: [Node.js](https://nodejs.org) (LTS sürümü).
    - **Linux:** `sh BASLAT.sh`
 3. Tarayıcıda açılan sayfada önce sarı **Dene** düğmesiyle sahte izleyicilerle dene.
 4. Yayın için sağ üstteki bilete TikTok kullanıcı adını yaz, kırmızı **Yayın** düğmesine bas.
-5. Tarayıcı adresinin sonuna `#yayin` ekle (yalnız sahne görünür), sahneye bir kez tıkla (ses), sonra bu
-   pencereyi yayın programına **pencere yakalama** kaynağı olarak ekle.
+5. Sahneyi yayına ekle (aşağıda).
 
 İlk açılışta TikTok bağlantı kütüphanesi bir kez iner (internet gerekir, yaklaşık bir dakika).
+
+## TikTok LIVE Studio'ya ekleme
+
+Oyun Studio'nun içinde doğrudan çizilir; ekran ya da pencere yakalanmaz, görüntü kayıpsız ve gecikmesiz, ses de
+doğrudan yayına gider.
+
+1. Studio'da **Add source → Link**.
+2. Adres: `http://kabe.localhost:8787/sahne/` · **Turn on sound** açık · **Custom resolution** açıp 1080 × 1920.
+3. **Add source**. Kaynağı sağ tıkla → **Full screen → Fit to screen**.
+
+Bu adres hiç değişmez: oyun başlatılınca kendiliğinden görünür, oyun yokken "Oyun bekleniyor" yazar.
+
+Tarayıcıdaki oyun sayfası artık **kumanda**dır: Studio'daki sahne bağlıyken masada "Yayın sahnesi bağlı" yazar,
+sayfa kendi sesini kısar (ses Studio'dan gelir) ve masada bastığın her şey (şarkı sırası, ses düğmeleri, yasaklı
+kelimeler, gizle / çıkar, Tavafı boşalt, B tuşu) sahnede de olur. Bilgisayardan eklenen şarkı dosyaları da
+sahneye geçer. Tarayıcı sayfasını küçültebilir ya da arkaya alabilirsin; yayını etkilemez.
 
 ## Şarkılar
 

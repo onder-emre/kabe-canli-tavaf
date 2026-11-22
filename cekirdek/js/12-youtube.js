@@ -103,7 +103,7 @@ const YT_MUZIK = (() => {
     if (!o)
       return;
     try {
-      if (muzik.acik) {
+      if (muzik.acik && !muzik.uzak) {
         o.unMute();
         o.setVolume(oynaticiSesi());
       }

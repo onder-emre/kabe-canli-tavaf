@@ -752,6 +752,7 @@ function baslat(kayit) {
         sesDegistir(true);
     });
   modYaz();
+  kumandaBasla(); // 65-kumanda.js: yayın sahnesi ya da panel olarak kumandayı kurar
   setInterval(masaYaz, 250);
   requestAnimationFrame(t => { sonKare = t; kare(t); });
 }

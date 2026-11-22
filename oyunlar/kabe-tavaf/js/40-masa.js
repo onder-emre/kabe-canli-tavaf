@@ -7,7 +7,7 @@
  * YouTube linkleri çekirdeğin YouTube oynatıcısıyla çalar (CanliOyun.youtube); bitince sıradaki gelir.
  * Bütün yazılar textContent: dosya adları da yabancı metin sayılır.
  */
-const SARKI = { liste: [], calan: -1, ses: null, url: null, yt: false, ytBasladi: false, ytIzle: 0, dongu: true, db: null, el: {} };
+const SARKI = { liste: [], calan: -1, ses: null, url: null, yt: false, ytBasladi: false, ytIzle: 0, dongu: true, db: null, el: {}, gidis: Promise.resolve() };
 
 function masaKur() {
   const yer = $('bu-oyunda');
@@ -33,7 +33,18 @@ function masaKur() {
   const dosyaDug = ogeYap('button', 'dugme kucuk', 'Bilgisayardan şarkı ekle');
   dosyaDug.type = 'button';
   dosyaDug.onclick = () => dosya.click();
-  dosya.onchange = () => { for (const f of dosya.files) sarkiEkle({ tur: 'dosya', ad: f.name.replace(/\.[^.]+$/, ''), blob: f }); dosya.value = ''; };
+  dosyaDug.dataset.yerel = '1'; // kumanda bu düğmeyi sahneye iletmez (sahnede dosya penceresi açardı); dosya ayrıca gider
+  dosya.onchange = () => {
+    for (const f of dosya.files) {
+      const ad = f.name.replace(/\.[^.]+$/, '');
+      sarkiEkle({ tur: 'dosya', ad, blob: f });
+      // Yayın sahnesi bağlıysa dosya motora yüklenir, sahne aynı şarkıyı kendi sırasına ekler (sırayla, karışmasın).
+      if (Kumanda.sahne.bagli)
+        SARKI.gidis = SARKI.gidis.then(() => Kumanda.dosyaYolla(f)).then(id => { Kumanda.gonder({ tur: 'oyun', is: 'sarki-dosya', ad, dosya: id }); })
+          .catch(() => sarkiIleti('"' + ad + '" yayın sahnesine gönderilemedi.'));
+    }
+    dosya.value = '';
+  };
   // youtube ekle
   const ytSatir = ogeYap('div', 'sarki-yt');
   const yt = document.createElement('input');
@@ -80,7 +91,7 @@ function masaKur() {
   katla.append(kutu);
   yer.append(katla);
   sesKartKur(yer, kutu);
-  SARKI.el = { ol, ileti, bas };
+  SARKI.el = { ol, ileti, bas, npc, dongu };
   const st = document.createElement('style');
   st.textContent = `
 .sarki-katla{min-width:0;max-width:100%}
@@ -102,7 +113,7 @@ function masaKur() {
 .sarki-dugmeler{display:flex;flex-wrap:wrap;gap:6px}
 `;
   document.head.append(st);
-  muzik.dinle(m => { if (SARKI.ses) SARKI.ses.volume = m.acik ? clamp(m.duzey, 0, 1) : 0; });
+  muzik.dinle(m => { if (SARKI.ses) SARKI.ses.volume = m.acik && !m.uzak ? clamp(m.duzey, 0, 1) : 0; });
   sarkiYukle();
 }
 function sarkiIleti(m) { if (SARKI.el.ileti) SARKI.el.ileti.textContent = m; }
@@ -213,7 +224,7 @@ function sarkiCal(i) {
   SARKI.url = URL.createObjectURL(s.blob);
   const ses = new Audio(SARKI.url);
   SARKI.ses = ses;
-  ses.volume = muzik.acik ? clamp(muzik.duzey, 0, 1) : 0;
+  ses.volume = muzik.acik && !muzik.uzak ? clamp(muzik.duzey, 0, 1) : 0;
   ses.onended = () => sarkiSonraki();
   ses.onerror = () => { sarkiIleti('"' + s.ad + '" çalınamadı; sıradakine geçiliyor.'); setTimeout(sarkiSonraki, 600); };
   muzik.disSustur(true, s.ad);
@@ -288,4 +299,72 @@ function sarkiYukle() {
       sarkiIleti(SARKI.liste.length + ' şarkı hazır. "Sırayı başlat"a bas.');
     }
   }).catch(() => { });
+}
+
+/* ---- kumanda (65-kumanda.js): Safari'deki panel ile Studio'daki yayın sahnesi aynı ayarlarla çalışsın ---- */
+// Panel: yeni bağlanan sahneye yollanacak ayarlar. Dosya şarkılar motora yüklenir, sahne kimlikle indirir.
+async function oyunKumandaTopla() {
+  const sarkilar = [];
+  for (const s of SARKI.liste) {
+    if (s.tur === 'youtube')
+      sarkilar.push({ tur: 'youtube', ad: s.ad, link: s.link });
+    else if (s.blob)
+      try {
+        sarkilar.push({ tur: 'dosya', ad: s.ad, dosya: await Kumanda.dosyaYolla(s.blob) });
+      }
+      catch (h) { /* yüklenemeyen dosya sahneye gitmez */ }
+  }
+  return { ses: Object.assign({}, SES), npc: !!D.npcAcik, dongu: !!SARKI.dongu, sarkilar };
+}
+// Sahne: panelden gelen ayarlar. Şarkı listesi aynıysa dokunulmaz (çalan şarkı kesilmesin).
+async function oyunKumandaUygula(o) {
+  if (!o || typeof o !== 'object')
+    return;
+  if (o.ses && typeof o.ses === 'object') {
+    for (const k of ['ney', 'ritim', 'dem', 'efekt', 'sarkidaSus'])
+      if (typeof o.ses[k] === 'boolean')
+        SES[k] = o.ses[k];
+    sesKaydet();
+    sesDugmeYaz();
+    sesUygula();
+  }
+  if (typeof o.npc === 'boolean' && o.npc !== !!D.npcAcik) {
+    D.npcAcik = o.npc;
+    if (SARKI.el.npc)
+      SARKI.el.npc.setAttribute('aria-pressed', String(o.npc));
+    oyunYerlesim();
+  }
+  if (typeof o.dongu === 'boolean') {
+    SARKI.dongu = o.dongu;
+    if (SARKI.el.dongu)
+      SARKI.el.dongu.setAttribute('aria-pressed', String(o.dongu));
+  }
+  if (!Array.isArray(o.sarkilar))
+    return;
+  const imza = l => l.map(s => s.tur + '|' + s.ad + '|' + (s.link || '')).join('\n');
+  if (imza(o.sarkilar) === imza(SARKI.liste))
+    return;
+  const yeni = [];
+  for (const s of o.sarkilar.slice(0, 200)) {
+    if (!s || typeof s !== 'object')
+      continue;
+    const ad = String(s.ad || 'Şarkı').slice(0, 80);
+    if (s.tur === 'youtube' && typeof s.link === 'string' && CanliOyun.youtube && CanliOyun.youtube.linkCoz(s.link))
+      yeni.push({ tur: 'youtube', ad, link: s.link });
+    else if (s.tur === 'dosya' && typeof s.dosya === 'string')
+      try {
+        yeni.push({ tur: 'dosya', ad, blob: await Kumanda.dosyaAl(s.dosya) });
+      }
+      catch (h) { /* alınamayan dosya atlanır */ }
+  }
+  sarkiDurdur(true);
+  SARKI.liste = yeni.map(s => Object.assign(s, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) }));
+  sarkiKaydet();
+  sarkiListeYaz();
+}
+// Sahne: panelde bilgisayardan eklenen şarkı.
+function oyunKumanda(m) {
+  if (m.is === 'sarki-dosya' && typeof m.dosya === 'string')
+    Kumanda.dosyaAl(m.dosya).then(blob => sarkiEkle({ tur: 'dosya', ad: String(m.ad || 'Şarkı').slice(0, 80), blob }))
+      .catch(() => sarkiIleti('Panelden gelen şarkı alınamadı.'));
 }

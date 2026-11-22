@@ -673,6 +673,7 @@ class Muzik {
     this.hazirSira = 0;
     this.hz = null;
     this.calar = null;
+    this.uzak = false; // uzakSustur: ses yayın sahnesinden çıkıyor, bu sayfa sessiz
     // disSustur: başka bir kaynak (YouTube, 12-youtube.js) çalarken oyunun müziği kısık; disAd o kaynağın sahnede
     // yazılacak adı (temizlenmiş, kısaltılmış düz metin), yoksa null
     this.disSessiz = false;
@@ -814,7 +815,7 @@ class Muzik {
     sik.attack.value = 0.004;
     sik.release.value = 0.16;
     const son = ctx.createGain();
-    son.gain.value = this.duzey; /* düzey sıkıştırıcıdan sonra ayarlanır */
+    son.gain.value = this.uzak ? 0 : this.duzey; /* düzey sıkıştırıcıdan sonra ayarlanır; uzak: ses yayın sahnesinden çıkıyor */
     // İki yol, ikisi de sıkıştırıcıdan ve ana düzeyden (son: ses aç / kapat, düzey kaydırıcısı) geçer:
     // muzikYol: çalan müziğin hepsi (ana'ya bağlanan davul, ezgi, eşlik, yankı); disSustur yalnız bunu kısar.
     // efektYol: tek seferlik efekt sesleri (hediye zili); YouTube çalarken de duyulur. Yeni efekt buraya bağlanır.
@@ -946,7 +947,7 @@ class Muzik {
       await p;
     if (!this.acik)
       this.tabanDegistir(true);
-    this.ses.son.gain.setTargetAtTime(this.duzey, this.ctx.currentTime, 0.05);
+    this.ses.son.gain.setTargetAtTime(this.uzak ? 0 : this.duzey, this.ctx.currentTime, 0.05);
     if (this.kaynak === 'hazir' && !this.hazirCal)
       this.hazirBaslat(this.hz ? this.hz.no : 0);
     this.sesBildir();
@@ -976,7 +977,20 @@ class Muzik {
     if (this.calar)
       this.calar.volume = clamp(v / 0.7, 0, 1);
     if (this.acik)
-      this.ses.son.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05);
+      this.ses.son.gain.setTargetAtTime(this.uzak ? 0 : v, this.ctx.currentTime, 0.05);
+    this.sesBildir();
+  }
+  // Bu sayfanın bütün sesini kısar / açar (65-kumanda.js): yayın sahnesi (TikTok LIVE Studio'daki Link kaynağı) bağlıyken
+  // ses oradan çıkar, panel sayfası sessiz kalır. Müzik, saat, ses açık / kapalı durumu ve düzey değişmez; yalnız çıkış susar.
+  uzakSustur(v) {
+    v = !!v;
+    if (this.uzak === v)
+      return;
+    this.uzak = v;
+    if (this.calar)
+      this.calar.muted = this.disSessiz || v;
+    if (this.ses && this.acik)
+      this.ses.son.gain.setTargetAtTime(v ? 0 : this.duzey, this.ctx.currentTime, 0.05);
     this.sesBildir();
   }
   // Oyunun müziğini dışarıdan kısar / geri açar (12-youtube.js: YouTube'dan şarkı çalarken). Yalnız müzik yolu
@@ -988,7 +1002,7 @@ class Muzik {
     this.disSessiz = !!evet;
     this.disAd = evet ? kisalt(temiz(ad), 36) || 'YouTube\'dan şarkı' : null;
     if (this.calar)
-      this.calar.muted = this.disSessiz;
+      this.calar.muted = this.disSessiz || this.uzak;
     if (this.ses)
       this.ses.muzikYol.gain.setTargetAtTime(this.disSessiz ? 0 : 1, this.ctx.currentTime, 0.05);
   }
@@ -1034,7 +1048,7 @@ class Muzik {
       this.hz.bos = { b: this.enVurus, s: performance.now() / 1000, hiz: this.parcalar[this.hz.no].bpm / 60 * a.playbackRate };
     a.src = this.muzikKok + p.dosya;
     a.volume = clamp(this.duzey / 0.7, 0, 1);
-    a.muted = this.disSessiz;
+    a.muted = this.disSessiz || this.uzak;
     a.playbackRate = clamp(this.carpan, 1, 1.25);
     try {
       await a.play();

@@ -79,7 +79,10 @@ const Yayin = {
     }
     this.ws = ws;
     bagDurum('', 'Bağlanıyor…');
-    ws.onopen = () => { bagDurum('acik', 'Köprüye bağlandı. Sahte izleyiciyi kapattım.'); otoAyarla(false); };
+    ws.onopen = () => { bagDurum('acik', 'Köprüye bağlandı. Sahte izleyiciyi kapattım.'); otoAyarla(false); try {
+      Kumanda.acildi();
+    }
+    catch (e) { } };
     ws.onmessage = ev => { let m; try {
       m = JSON.parse(ev.data);
     }
@@ -102,6 +105,16 @@ const Yayin = {
         bagDurum('acik', tek.ileti || '');
         continue;
       }
+      // Kumanda iletileri (65-kumanda.js): panelden yayın sahnesine giden düğmeler, sahnenin durumu. Olay değildir.
+      if (tek && (tek.tip === 'kumanda' || tek.tip === 'sahne')) {
+        try {
+          Kumanda.al(tek);
+        }
+        catch (e) {
+          console.error(e);
+        }
+        continue;
+      }
       const o = this.cevir(tek);
       if (o) {
         this.alinan++;
@@ -114,6 +127,10 @@ const Yayin = {
       if (this.ws !== ws)
         return;
       this.ws = null;
+      try {
+        Kumanda.kapandi();
+      }
+      catch (e) { }
       $('bag-dugme').textContent = 'Bağlan';
       if (this.bitti) {
         this.kopruBaglanti = 'durdu';

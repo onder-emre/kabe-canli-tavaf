@@ -159,7 +159,10 @@ function soketleriKapat(kosul, ileti) {
   }
 }
 // Yalnız bu köprünün kendi adresi: başka bir ad taşıyan istek (DNS yeniden bağlama) her kipte geri çevrilir.
-const IZINLI_HOST = ['127.0.0.1:' + PORT, 'localhost:' + PORT];
+// kabe.localhost: TikTok LIVE Studio'nun Link kaynağı noktasız adı (localhost) kabul etmez; tarayıcılar *.localhost'u her
+// zaman bu bilgisayara (127.0.0.1) çözer, başka bir site bu adı kendine yönlendiremez. 127.0.0.1.nip.io: aynı amaçla
+// yedek ad (yalnız 127.0.0.1'e çözülür; internetten DNS ister).
+const IZINLI_HOST = ['127.0.0.1:' + PORT, 'localhost:' + PORT, 'kabe.localhost:' + PORT, '127.0.0.1.nip.io:' + PORT];
 // Komut satırı kiplerinde olay akışının adresi: her açılışta yeni, tahmin edilemez bir kimlik (/olay/<kimlik>). Köprü
 // kendi sunduğu sayfaya bunu yazar; diskten açılan sayfa ya da başka bir program siyah pencerede yazan tam adresi
 // kullanır. Kimliği bilmeyen (başka bir sitenin sayfası, kum havuzlu iframe'i dahil) el sıkışmadan önce 403 alır.
@@ -217,6 +220,36 @@ function muzikSun(ad, req, res, klasor = MUZIK_KLASOR) {
     fs.createReadStream(dosya, { start: bas, end: son }).on('error', () => res.destroy()).pipe(res);
   });
 }
+// KUMANDA (cekirdek/js/65-kumanda.js): paneldeki sayfa { tip: 'kumanda' } yollar, motor aynı başlatmanın yayın
+// sahnelerine iletir; sahne { tip: 'sahne-durum', ses, acik } yollar, motor panellere { tip: 'sahne', … } duyurur.
+// Yalnız ana sayfa kipinde (başlatma kimliği olan soketler). Bozuk ya da tanınmayan ileti sessizce düşer.
+const sahneler = cal => [...istemciler].filter(s => s.sahne && s.calistirma === cal);
+const sahneSay = () => calisan ? sahneler(calisan.calistirma).length : 0;
+function sahneDurum(cal, yeni) {
+  const l = sahneler(cal), d = (l.find(s => s.sahneDurum) || {}).sahneDurum || {};
+  return { tip: 'sahne', bagli: l.length, ses: d.ses || null, acik: !!d.acik, yeni: !!yeni };
+}
+function sahneBildir(cal, yeni) {
+  if (!cal) return;
+  const c = cerceve(JSON.stringify(sahneDurum(cal, yeni)));
+  for (const s of istemciler) { if (s.sahne || s.calistirma !== cal) continue; try { s.write(c); } catch (e) { } }
+}
+function kumandaIletisi(soket, yuk) {
+  if (!soket.calistirma || !calisan || soket.calistirma !== calisan.calistirma) return;
+  let o;
+  try { o = JSON.parse(yuk.toString('utf8')); } catch (e) { return; }
+  if (!o || typeof o !== 'object') return;
+  temas();
+  if (o.tip === 'kumanda' && !soket.sahne && typeof o.tur === 'string') {
+    const c = cerceve(JSON.stringify(o));
+    for (const s of sahneler(soket.calistirma)) { try { s.write(c); } catch (e) { } }
+  } else if (o.tip === 'sahne-durum' && soket.sahne) {
+    const yeni = { ses: ['running', 'suspended', 'closed', 'yok'].includes(o.ses) ? o.ses : null, acik: !!o.acik };
+    const eski = soket.sahneDurum || {};
+    soket.sahneDurum = yeni;
+    if (eski.ses !== yeni.ses || eski.acik !== yeni.acik) sahneBildir(soket.calistirma, false);
+  }
+}
 sunucu.on('upgrade', (req, soket) => {
   // Hata dinleyicisi en başta: geri çevrilen ya da yarıda kesilen bir bağlantının ECONNRESET'i köprüyü düşürmesin
   // (dinleyicisiz soketteki 'error' bütün süreci kapatır; başka bir site yalnız yoklayarak motoru durdurabilirdi).
@@ -236,6 +269,7 @@ sunucu.on('upgrade', (req, soket) => {
     const m = /^\/olay\/([\w-]+)\/([a-f0-9]{12})$/.exec((req.url || '').split('?')[0]);
     if (!m || !calisan || calisan.oyun !== m[1] || calisan.calistirma !== m[2]) { reddet(); return; }
     soket.calistirma = m[2];
+    soket.sahne = /[?&]sahne=1(&|$)/.test(req.url || ''); // yayın sahnesi (Studio'daki Link kaynağı)
   }
   const kabul = crypto.createHash('sha1').update(anahtar + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64');
   soket.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + kabul + '\r\n\r\n');
@@ -244,8 +278,11 @@ sunucu.on('upgrade', (req, soket) => {
   try { soket.setKeepAlive(true, 60e3); } catch (e) { }
   yaz('Oyun sayfası bağlandı (' + istemciler.size + ' sayfa).');
   soket.write(cerceve(JSON.stringify({ tip: 'kopru', ileti: sonDurum, baglanti: sonBaglanti })));
+  if (soket.sahne) { yaz('Yayın sahnesi bağlandı.'); sahneBildir(soket.calistirma, true); }
+  // Yeni açılan panel, sahne zaten bağlıysa ayarlarını hemen yollasın (yeni: true): iki sayfa aynı ayarla başlar.
+  else if (soket.calistirma) try { soket.write(cerceve(JSON.stringify(sahneDurum(soket.calistirma, sahneler(soket.calistirma).length > 0)))); } catch (e) { }
   let tampon = Buffer.alloc(0);
-  soket.on('data', parca => { // istemciden yalnızca kapanış ve ping beklenir
+  soket.on('data', parca => { // istemciden kapanış, ping ve kumanda iletileri (metin) gelir
     tampon = Buffer.concat([tampon, parca]);
     while (tampon.length >= 2) {
       const islem = tampon[0] & 0x0f, maskeli = tampon[1] & 0x80; let uz = tampon[1] & 0x7f, i = 2;
@@ -257,10 +294,11 @@ sunucu.on('upgrade', (req, soket) => {
       if (maskeli) { const m = tampon.subarray(i, i + 4); yuk = Buffer.from(yuk.map((b, k) => b ^ m[k & 3])); }
       tampon = tampon.subarray(toplam);
       if (islem === 0x8) { try { soket.end(Buffer.from([0x88, 0])); } catch (e) {} return; }
+      if (islem === 0x1) kumandaIletisi(soket, yuk);
       if (islem === 0x9) { try { soket.write(Buffer.concat([Buffer.from([0x8a, yuk.length & 0x7f]), yuk.subarray(0, 125)])); } catch (e) {} }
     }
   });
-  const birak = () => { temas(); if (istemciler.delete(soket)) yaz('Oyun sayfası ayrıldı (' + istemciler.size + ' sayfa).'); };
+  const birak = () => { temas(); if (istemciler.delete(soket)) { yaz('Oyun sayfası ayrıldı (' + istemciler.size + ' sayfa).'); if (soket.sahne) sahneBildir(soket.calistirma, false); } };
   soket.on('close', birak); soket.on('error', birak);
 });
 sunucu.on('error', e => {
@@ -806,11 +844,10 @@ function jsonYaz(res, kod, nesne) {
 // İstek bu köprünün kendi sayfasından mı? Host başka bir ad taşıyorsa (DNS yeniden bağlama) ya da istek başka bir
 // siteden geliyorsa geri çevrilir. Tarayıcı başka sitenin JSON gövdeli POST'una önce izin sorar; köprü izin vermez.
 function yerelIstek(req, kaynakGerekli) {
-  const izinli = ['127.0.0.1:' + PORT, 'localhost:' + PORT];
-  if (!izinli.includes(String(req.headers.host || '').toLowerCase())) return false;
+  if (!IZINLI_HOST.includes(String(req.headers.host || '').toLowerCase())) return false;
   if (!kaynakGerekli) return true;
   const kaynak = String(req.headers.origin || '').toLowerCase();
-  if (!izinli.some(h => kaynak === 'http://' + h)) return false;
+  if (!IZINLI_HOST.some(h => kaynak === 'http://' + h)) return false;
   const site = req.headers['sec-fetch-site'];
   return !site || site === 'same-origin';
 }
@@ -833,7 +870,18 @@ function anaSayfaIstegi(req, res, yol) {
   if (yol === '/uyan') { uyanIstegi(req, res); return; }
   if (yol === '/nabiz') { nabizIstegi(req, res); return; }
   if (yol === '/api/kutuphane') { postAl(req, res, () => { if (kutuphane.durum === 'hata') kutuphaneHazirla(); jsonYaz(res, 200, { tamam: true, ...anaDurum() }); }); return; }
-  if (yol === '/durum') { jsonYaz(res, 200, { durum: sonDurum, bagliSayfa: istemciler.size, sayac, aktif: anaDurum().aktif }); return; }
+  if (yol === '/durum') { jsonYaz(res, 200, { durum: sonDurum, bagliSayfa: istemciler.size, sayac, aktif: anaDurum().aktif, sahne: sahneSay() }); return; }
+  if (yol === '/sahne') { res.writeHead(301, { location: '/sahne/' }); res.end(); return; }
+  if (yol === '/sahne/' || yol === '/sahne/index.html') { sahneSayfasi(res); return; }
+  if (yol.startsWith('/sahne/muzik/')) {
+    const o = calisan && vitrindekiler().find(x => x.id === calisan.oyun);
+    if (!o) { res.writeHead(404); res.end(); return; }
+    muzikSun(yol.slice(13), req, res, path.join(o.klasor, 'muzik'));
+    return;
+  }
+  if (yol === '/api/sarki') { sarkiYukle(req, res); return; }
+  const ms = /^\/api\/sarki\/([a-f0-9]{24})$/.exec(yol);
+  if (ms) { sarkiSun(ms[1], res); return; }
   const m = /^\/(oyun|onizleme)\/([^/]+)(\/.*)?$/.exec(yol);
   const o = m && OYUN_DESEN.test(m[2]) ? vitrindekiler().find(x => x.id === m[2]) : null;
   if (!o) { res.writeHead(404); res.end(); return; }
@@ -856,6 +904,54 @@ function anaSayfaIstegi(req, res, yol) {
 // Sayfanın kipi açılıştan bellidir: masa daha ilk karesinde doğru düzende çizilir (deneme izleyicisi kartı yalnız
 // denemede). Köprünün seçtiği iki sabit kelimeden biri yazılır, istekten gelen hiçbir şey yazılmaz; sayfa <html data-kip>
 // okur (docs/OLAYLAR.md). Diskten açılan sayfada bu yoktur, sayfa deneme kipindedir.
+// YAYIN SAHNESİ: TikTok LIVE Studio'nun Link kaynağına yazılan sabit adres (http://kabe.localhost:8787/sahne/). O an
+// çalışan oyunu yalnız sahne olarak verir (panel yok, "Paneli göster" yok); ses de bu sayfadan çıkar (cekirdek/js/65-kumanda.js).
+// Oyun yoksa ya da değişirse bekleme sayfası iki saniyede bir bakar, kendini yeniler: Studio'da adres hiç değişmez.
+const SAHNE_EK = '<style>#cik-yayin,.ana-don,#ses-cagri,#calistirma-ortu{display:none!important}html,body{background:#000}</style>\n' +
+  '<script>(function(){var C=window.OYUN_CALISTIRMA;function bak(){fetch("/api/oyunlar",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){var a=d&&d.aktif;' +
+  'if(!a||a.oyun!==C.oyun||a.calistirma!==C.kimlik)location.reload();}).catch(function(){});}setInterval(bak,2000);addEventListener("kopru-durdu",function(){setTimeout(bak,300);});})();</script>';
+const SAHNE_BEKLE = '<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8"><title>Yayın sahnesi</title>' +
+  '<style>html,body{margin:0;height:100%;background:#0b0f24;color:#c9b27a;font:500 15px/1.5 system-ui,sans-serif;display:grid;place-items:center;text-align:center}</style></head>' +
+  '<body><p>Oyun bekleniyor…<br><small style="opacity:.6">Ana sayfadan oyunu başlatınca burada görünür.</small></p>' +
+  '<script>setInterval(function(){fetch("/api/oyunlar",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){if(d&&d.aktif)location.reload();}).catch(function(){});},2000);</script></body></html>';
+function sahneSayfasi(res) {
+  const o = calisan && vitrindekiler().find(x => x.id === calisan.oyun);
+  if (!o) {
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(SAHNE_BEKLE);
+    return;
+  }
+  const ek = '<script>window.OYUN_KOPRU = (location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/olay/' + o.id + '/' + calisan.calistirma + '?sahne=1";' +
+    'window.OYUN_CALISTIRMA = { oyun: "' + o.id + '", kimlik: "' + calisan.calistirma + '" };window.OYUN_SAHNE = true;' + kipEk(calisan.kip !== 'canli') + '</script>\n' +
+    (calisan.kip === 'canli' ? DENEME_ADLARINI_SIL : '') + SAHNE_EK;
+  oyunSayfasi(o, ek, res);
+}
+// Kumanda: panelde bilgisayardan eklenen şarkı dosyası sahneye buradan geçer. Yalnız bellekte tutulur (motor kapanınca
+// gider); tek dosya en çok 80 MB, hepsi en çok 400 MB (aşınca en eskisi atılır). Kimlik tahmin edilemez.
+const SARKI_DEPO = new Map(), SARKI_TEK = 80 << 20, SARKI_TOPLAM = 400 << 20;
+function sarkiYukle(req, res) {
+  if (req.method !== 'POST') { res.writeHead(405, { allow: 'POST' }); res.end(); req.resume(); return; }
+  if (!yerelIstek(req, true) || String(req.headers['x-kabe'] || '').toLowerCase() !== 'sarki') { jsonYaz(res, 403, { tamam: false, hata: 'Bu istek oyunun kendi sayfasından gelmedi.' }); req.resume(); return; }
+  const tur = String(req.headers['content-type'] || '').toLowerCase();
+  if (!/^(audio\/[\w.+-]+|application\/octet-stream)$/.test(tur)) { jsonYaz(res, 415, { tamam: false, hata: 'Yalnız ses dosyası.' }); req.resume(); return; }
+  const parcalar = []; let boy = 0, fazla = false;
+  req.on('data', p => { if (fazla) return; boy += p.length; if (boy > SARKI_TEK) { fazla = true; jsonYaz(res, 413, { tamam: false, hata: 'Dosya çok büyük (en çok 80 MB).' }); req.destroy(); return; } parcalar.push(p); });
+  req.on('end', () => {
+    if (fazla) return;
+    const veri = Buffer.concat(parcalar), id = crypto.randomBytes(12).toString('hex');
+    SARKI_DEPO.set(id, { tur, veri });
+    let toplam = 0;
+    for (const v of SARKI_DEPO.values()) toplam += v.veri.length;
+    for (const [k, v] of SARKI_DEPO) { if (toplam <= SARKI_TOPLAM || k === id) break; toplam -= v.veri.length; SARKI_DEPO.delete(k); }
+    jsonYaz(res, 200, { tamam: true, id });
+  });
+}
+function sarkiSun(id, res) {
+  const s = SARKI_DEPO.get(id);
+  if (!s) { res.writeHead(404); res.end(); return; }
+  res.writeHead(200, { 'content-type': s.tur, 'content-length': s.veri.length, 'cache-control': 'no-store' });
+  res.end(s.veri);
+}
 function kipEk(deneme) { return 'document.documentElement.setAttribute("data-kip","' + (deneme ? 'deneme' : 'canli') + '");'; }
 function oyunSayfasi(o, ek, res) {
   fs.readFile(path.join(o.klasor, 'oyun.html'), 'utf8', (hata, html) => {
