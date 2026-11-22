@@ -1,14 +1,16 @@
 /* AYAR — Kâbe Canlı Tavaf yayınının bütün yazıları, hediye kademeleri, açılış kalabalığı ve sahte yorumları.
  * Derlemede HER ZAMAN İLK dosyadır; çekirdek OYUN'u buradan okur (docs/KANCALAR.md).
  * Oyun: yorum yazan izleyici tavafa katılır, Kâbe'nin etrafında (soldan, saat yönünün tersine) döner; her turu
- * adının yanında "3/7" diye sayılır, yedinci turda tavafı tamamlanır. Hediye atanın adı büyük kartta çıkar;
- * en çok hediye atan ("gönül veren") en içteki halkada, Kâbe'ye en yakın yürür.
+ * adının yanında "3/7" diye sayılır, yedinci turda tavafı tamamlanır. Hediye ekranda hiçbir şeyin karşılığı değildir
+ * (hediyeSessiz): gönderene yalnız kısa bir teşekkür kartı çıkar; sıra, halka ve taç geliş sırasına göredir, jeton
+ * sıralaması sahnede gösterilmez. TikTok hediye karşılığı vaadi / jeton tarifesini yapay etkileşim sayıp yayını kısıtlıyor.
  */
 const OYUN = {
   id: 'kabe-tavaf',
   ad: 'Kâbe Canlı Tavaf',
   logo: ['Kâbe-i', 'Muazzama'],
-  nasil: { yorum: 'Yorum: tavafa katıl', begeni: 'Beğeni: kalabalık', hediye: 'Hediye: ismin nurlansın' },
+  nasil: { yorum: 'Yorum: tavafa katıl', begeni: 'Beğeni: kalabalık', hediye: 'Hediye: teşekkür kartı' },
+  hediyeSessiz: true,
   yazi: {
     sira: 'Gönül verenler', gosterge: 'Beğeni', bos: 'Henüz kimse yok. İlk yorumu yazan tavafa başlar.',
     birim: 'kişi', ses: 'Ney sesini başlat', sahne: 'Kâbe etrafında tavaf sahnesi', giris: 'tavafa katılır',
@@ -17,11 +19,9 @@ const OYUN = {
   kapasite: 48,
   // Büyükten küçüğe. tip, oyunHediye'nin hangi etkiyi başlatacağını seçer; etki paneldeki tabloda ve sahnedeki
   // hediye kartlarında yazar (kart: kisa).
+  // Tek kademe: her hediyeye aynı kısa teşekkür (değerine göre farklı ödül yok).
   kademe: [
-    { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adı parlar', kisa: 'Kâbe nurlanır' },
-    { min: 100, ad: 'Harem ışıkları', tip: 'isik', etki: 'Harem ışıkları yanar, minareler parlar', kisa: 'Harem ışıkları yanar' },
-    { min: 10, ad: 'Kafile', tip: 'kafile', etki: 'Gönderenin adına bir kafile tavafa katılır', kisa: 'Kafileye katılır' },
-    { min: 1, ad: 'Gül', tip: 'gul', etki: 'Gönderenin adı nurlanır, gül yaprakları yağar', kisa: 'İsmin nurlanır, gül yağar' }
+    { min: 1, ad: 'Teşekkür', tip: 'tesekkur', etki: 'Gönderenin adıyla kısa bir "Allah razı olsun" kartı çıkar', kisa: 'Teşekkür' }
   ],
   tohum: [['Özdemir', 183], ['ItsMuko', 121], ['SOYDAN', 100], ['Hesam2', 80], ['zeynep', 50], ['Derya', 10], ['Kemal', 5], ['Naz', 1], ['Hüseyin', 0], ['SEMANUR', 0], ['ireemerdem', 0], ['Valeria', 0]],
   sahteAd: ['Fatih', 'zeynep', 'Hüseyin', 'Kemal', 'Naz', 'SEMANUR', 'ireemerdem', 'Valeria', 'Derya', 'KATAR27', 'elkoahmad', 'Malick', 'habab114', 'Fatima', 'senakavacnn', 'Elis', 'Bellnay', 'Emir.Mehmet', 'Baghlan68', 'David', 'Hesam2', 'Özdemir', 'ItsMuko', 'SOYDAN', 'yarwn', 'İrem', 'Ayşe_nur', 'muhammed.33', 'Büşra', 'Abdullah', 'Rukiye', 'Yusuf', 'Meryem.k', 'Hatice', 'Ömer_faruk', 'Elif', 'Bilal', 'Sümeyye', 'Hamza', 'Zehra', 'İbrahim', 'Esma', 'Selim', 'Kübra'],

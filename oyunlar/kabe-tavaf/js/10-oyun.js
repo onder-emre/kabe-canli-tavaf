@@ -118,35 +118,13 @@ function* yuruyenler() {
 }
 
 /* ---- olaylar ---- */
-// Hediye: adı büyük kartta çıkar, kademeye göre etkisi başlar. Gönderen ellerini dua için kaldırır (zip aralığı).
-function oyunHediye(k, jeton, kademe) {
-  tavafHazir(k, BASLA_ACI, DIS_R);
-  const tip = kademe.tip;
-  k.nurBit = Math.max(k.nurBit || 0, B) + (tip === 'gul' ? 10 : 16);
-  D.hediyeKart = { tip, b: B };
-  const KART = {
-    gul: ['Gül gönderdi', 'İsmi nurlandı'],
-    kafile: ['Gül demeti gönderdi', 'Kafileye katıldı'],
-    isik: ['Harem ışıklarını yaktı', 'Allah razı olsun'],
-    nur: ['Kâbe nurlandı', 'Allah razı olsun']
-  }[tip];
-  kartGoster(k.ad, KART[0], KART[1], tip, tip === 'nur' ? 7 : 4.2);
-  if (tip === 'gul' || tip === 'nur')
-    D.gulBit = Math.max(D.gulBit, B) + (tip === 'nur' ? 14 : 5);
-  if (tip === 'kafile')
-    kafileKur(k, Math.min(5, 2 + Math.floor(jeton / 25)));
-  if (tip === 'isik' || tip === 'nur')
-    D.isikBit = Math.max(D.isikBit, B) + clamp(jeton * 0.4, 40, 240);
-  if (tip === 'nur') {
-    D.nur = { k, b0: B, bit: B + 24 };
-    k.yildiz = true;
-    pankart('Allah razı olsun', k.ad);
-  }
+// Hediye: gönderene yalnız kısa bir teşekkür kartı. Değerine göre ödül, ışık, yağmur, kafile yok (OYUN.hediyeSessiz).
+function oyunHediye(k) {
+  D.hediyeKart = { tip: 'tesekkur', b: B };
+  kartGoster(k.ad, 'Allah razı olsun', 'Hediyen için teşekkürler', 'tesekkur', 3.2);
 }
-function oyunLiderDegisti(eski, yeni) {
-  pankart('En çok gönül veren', yeni.ad);
-  yeni.nurBit = Math.max(yeni.nurBit || 0, B) + 8;
-}
+// Sıra geliş sırasına göre (hediyeSessiz): lider hediyeyle değişmez; değişirse pankart çıkmaz.
+function oyunLiderDegisti() { }
 // Kafile: gönderenin arkasından gelen birkaç adsız tavafçı; bir süre onunla birlikte döner, sonra ayrılır.
 function kafileKur(k, n) {
   for (let i = 0; i < n; i++) {

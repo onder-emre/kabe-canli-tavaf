@@ -106,7 +106,8 @@ function katil(id, ad, zorla) {
 }
 function cikar(k) { k.cikiyor = true; k.cikis = zaman; siraGuncelle(); }
 function siraGuncelle() {
-  D.sira = [...D.oy.values()].filter(k => !k.cikiyor).sort((a, b) => b.jeton - a.jeton || a.katilim - b.katilim);
+  // OYUN.hediyeSessiz: hediye sırayı değiştirmez (lider, iç halka, taç geliş sırasına göre); jeton yalnız masada sayılır.
+  D.sira = [...D.oy.values()].filter(k => !k.cikiyor).sort(OYUN.hediyeSessiz ? (a, b) => a.katilim - b.katilim : (a, b) => b.jeton - a.jeton || a.katilim - b.katilim);
   D.sira.forEach((k, i) => k.sn = i);
   D.lider = D.sira[0] || null;
   oyunYerlesim();
@@ -173,16 +174,21 @@ function olay(o) {
       return;
     k.jeton += j;
     k.son = zaman;
-    D.cosku = Math.min(1, D.cosku + Math.min(0.35, j / 300));
+    // OYUN.hediyeSessiz: ekranda jeton yazmaz, zıplatmaz, zil çalmaz, coşkuyu artırmaz; teşekkürü oyunHediye gösterir.
+    const sessiz = !!OYUN.hediyeSessiz;
+    if (!sessiz)
+      D.cosku = Math.min(1, D.cosku + Math.min(0.35, j / 300));
     const kd = KADEME.find(x => j >= x.min) || KADEME[KADEME.length - 1];
     // Kademeye yalnız seriyle (tek hediyesi eşiğin altında) gelindiyse ve kademe ayrı bir "seriAd" taşıyorsa bildirim ve
     // akış o adı yazar (docs/KANCALAR.md, OYUN.kademe). seriAd vermeyen oyunda kademenin adı yazar, değişen bir şey yok.
     const kdAd = kd.seriAd && birim < kd.min ? kd.seriAd : kd.ad;
     // Hediye sevinci: bir sonraki yarım vuruştan başlayıp 4 vuruş sürer (oyun k.zip0–k.zip1 arasında zıplatır).
-    k.zip0 = Math.ceil(B * 2) / 2;
-    k.zip1 = k.zip0 + 4;
-    bildir(ad, j + ' jeton', kdAd + '!');
-    muzik.zil(Math.min(1, j / 200));
+    if (!sessiz) {
+      k.zip0 = Math.ceil(B * 2) / 2;
+      k.zip1 = k.zip0 + 4;
+      bildir(ad, j + ' jeton', kdAd + '!');
+      muzik.zil(Math.min(1, j / 200));
+    }
     // Akış satırı: hediyenin adı ve olayın taşıdığı adet (yoksa yazılmaz), jeton, tetiklenen kademe (25-yazilar.js).
     gunluk('hediye', ad, '', { jeton: j, ad: hd && hd.ad || '', adet: adet > 1 ? adet : 0, kademe: kdAd }, id);
     // Dördüncü bilgi hediyenin kimliği ({ id, ad } ya da null), beşinci tek hediyenin değeri ve adedi ({ birim, adet });

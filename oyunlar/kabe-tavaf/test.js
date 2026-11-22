@@ -16,22 +16,22 @@ const { sonuc, kontrol } = kontrolcu();
   await hazirBekle(p);
   await p.evaluate(() => { const o = document.getElementById('oto'); if (o.getAttribute('aria-pressed') === 'true') o.click(); document.getElementById('bosalt').click(); });
 
-  // her kademe kendi etkisini başlatır, ad kartı gönderenin adını yazar
+  // Sessiz hediye (OYUN.hediyeSessiz): her değerde yalnız ad kartında teşekkür; ödül etkisi (gül, kafile, ışık, nur) ve
+  // ekranda jeton yok, gönderen lider / iç halka olmaz.
   const kd = await p.evaluate(() => {
     const D = CanliOyun._test.D, cik = {};
+    CanliOyun.olay({ tip: 'yorum', kullanici: { id: 'ilk', ad: 'IlkGelen' }, metin: 'amin' });
     for (const j of [1, 10, 100, 500]) {
       CanliOyun._test.zamanEkle(0.2);
       const kafile = D.kafile.length;
       CanliOyun.olay({ tip: 'hediye', kullanici: { id: 'h' + j, ad: 'Hediyeci' + j }, jeton: j });
       const d = CanliOyun.durum();
-      cik[j] = { kart: d.kart, gul: D.gulBit > d.vurus, kafile: D.kafile.length - kafile, isik: d.isik, nur: d.nur };
+      cik[j] = { kart: d.kart, yazi: D.kart && D.kart.satir1, gul: D.gulBit > d.vurus, kafile: D.kafile.length - kafile, isik: d.isik, nur: d.nur, lider: d.lider, bildirim: document.getElementById('bildirim').textContent };
     }
     return cik;
   });
-  kontrol('1 jeton (Gül): adı kartta çıkar, gül yaprağı yağar', kd[1].kart === 'Hediyeci1' && kd[1].gul && kd[1].kafile === 0, kd[1]);
-  kontrol('10 jeton (Rosa): adına kafile katılır', kd[10].kart === 'Hediyeci10' && kd[10].kafile >= 2, kd[10]);
-  kontrol('100 jeton: Harem ışıkları yanar', kd[100].kart === 'Hediyeci100' && kd[100].isik, kd[100]);
-  kontrol('500 jeton: Kâbe nurlanır, büyük dua', kd[500].kart === 'Hediyeci500' && kd[500].nur, kd[500]);
+  for (const j of [1, 10, 100, 500])
+    kontrol(j + ' jeton: yalnız teşekkür kartı (ödül etkisi, jeton yazısı, liderlik yok)', kd[j].kart === 'Hediyeci' + j && kd[j].yazi === 'Allah razı olsun' && !kd[j].gul && kd[j].kafile === 0 && !kd[j].isik && !kd[j].nur && kd[j].lider === 'IlkGelen' && !/jeton/.test(kd[j].bildirim), kd[j]);
   await p.waitForTimeout(400);
   await p.locator('#sahne').screenshot({ path: CIKTI + '/k-nur.png' });
 

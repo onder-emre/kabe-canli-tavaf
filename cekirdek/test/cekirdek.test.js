@@ -23,8 +23,11 @@ const { sonuc, kontrol } = kontrolcu();
   const O = (o) => p.evaluate(o2 => CanliOyun.olay(o2), o);
   const durum = () => p.evaluate(() => CanliOyun.durum());
   // oyunun ayarı: kapasite, kademeler (büyükten küçüğe), boş sahne yazısı
-  const AYAR = await p.evaluate(() => { const T = CanliOyun._test; return { kapasite: T.OYUN.kapasite, bos: T.OYUN.yazi.bos, kademe: T.KADEME.map(x => ({ min: x.min, ad: x.ad })), birim: T.OYUN.yazi.birim, bosalt: T.OYUN.yazi.bosalt }; });
+  const AYAR = await p.evaluate(() => { const T = CanliOyun._test; return { sessiz: !!T.OYUN.hediyeSessiz, kapasite: T.OYUN.kapasite, bos: T.OYUN.yazi.bos, kademe: T.KADEME.map(x => ({ min: x.min, ad: x.ad })), birim: T.OYUN.yazi.birim, bosalt: T.OYUN.yazi.bosalt }; });
   const KAP = AYAR.kapasite, MINLER = AYAR.kademe.map(x => x.min);
+  // OYUN.hediyeSessiz: hediye sırayı / lideri değiştirmez (geliş sırası), ekranda jeton bildirimi yok, sıralama kutusu
+  // oyunca gizlenebilir. Bu oyunlarda hediye kuralları o beklentiyle denenir.
+  const SESSIZ = AYAR.sessiz;
   console.log('Oyun:', OYUN_AD, '· kapasite', KAP, '· kademeler', MINLER.join('/'));
 
   // ---------- KURALLAR ----------
@@ -42,14 +45,15 @@ const { sonuc, kontrol } = kontrolcu();
   await O({ tip: 'takip', kullanici: { id: 'c', ad: 'Cem' } });
   d = await durum(); kontrol('Takip eden oyuna girer', d.kisi === 3, d.sira);
   await O({ tip: 'hediye', kullanici: { id: 'b', ad: 'Bora' }, jeton: 5 });
-  d = await durum(); kontrol('Hediye atan öne geçip lider olur', d.lider === 'Bora' && d.sira[0][1] === 5, d.sira);
+  d = await durum(); kontrol(SESSIZ ? 'Sessiz hediye: hediye atan öne geçmez, lider ilk gelen kalır, jetonu sayılır' : 'Hediye atan öne geçip lider olur', SESSIZ ? d.lider === 'Ali' && d.sira[1][1] === 5 : d.lider === 'Bora' && d.sira[0][1] === 5, d.sira);
   await O({ tip: 'hediye', kullanici: { id: 'c', ad: 'Cem' }, jeton: 5 });
-  d = await durum(); kontrol('Eşit jetonda önce gelen önde kalır', d.lider === 'Bora' && d.sira[1][0] === 'Cem', d.sira);
+  d = await durum(); kontrol(SESSIZ ? 'Sessiz hediye: sıra geliş sırasında kalır' : 'Eşit jetonda önce gelen önde kalır', SESSIZ ? d.sira.map(x => x[0]).join() === 'Ali,Bora,Cem' : d.lider === 'Bora' && d.sira[1][0] === 'Cem', d.sira);
   await O({ tip: 'hediye', kullanici: { id: 'c', ad: 'Cem' }, jeton: 1, adet: 3 });
-  d = await durum(); kontrol('Adetli hediye çarpılarak sayılır (1×3)', d.lider === 'Cem' && d.sira[0][1] === 8, d.sira);
+  d = await durum(); kontrol('Adetli hediye çarpılarak sayılır (1×3)', SESSIZ ? d.sira[2][1] === 8 : d.lider === 'Cem' && d.sira[0][1] === 8, d.sira);
   await O({ tip: 'hediye', kullanici: { id: 'yeni', ad: 'Yeni' }, jeton: 50 });
-  d = await durum(); kontrol('Sahnede olmayan hediye atınca girer ve sıraya yerleşir', d.lider === 'Yeni' && d.kisi === 4, d.sira);
-  kontrol('En çok hediye atan liderdir', d.sira.every(x => x[1] <= d.sira[0][1]) && d.sira[0][0] === d.lider, d.sira);
+  d = await durum(); kontrol('Sahnede olmayan hediye atınca girer ve sıraya yerleşir', (SESSIZ ? d.lider === 'Ali' && d.sira[3][0] === 'Yeni' : d.lider === 'Yeni') && d.kisi === 4, d.sira);
+  if (!SESSIZ)
+    kontrol('En çok hediye atan liderdir', d.sira.every(x => x[1] <= d.sira[0][1]) && d.sira[0][0] === d.lider, d.sira);
   // Her kademenin en küçük değeri o kademenin adını, bir eksiği bir alt kademenin adını bildirir; çok büyük hediye en üst kademedir.
   const kd = await p.evaluate(K => {
     const cik = [], dene = (j, i) => { CanliOyun._test.zamanEkle(0.2); CanliOyun.olay({ tip: 'hediye', kullanici: { id: 'kd' + j + '_' + i, ad: 'kd' + j }, jeton: j }); return document.getElementById('bildirim').lastChild.textContent; };
@@ -57,7 +61,10 @@ const { sonuc, kontrol } = kontrolcu();
     cik.push([K[0].min * 50, dene(K[0].min * 50, 99), K[0].ad]);
     return cik;
   }, AYAR.kademe);
-  kontrol('Hediye kademeleri doğru eşleşir (bildirimde kademe adı)', kd.every(([, yazi, ad]) => yazi.includes(' ' + ad + '!')), kd.map(([j, yazi, ad]) => j + ' → ' + yazi.split('·').pop().trim() + ' (beklenen ' + ad + ')'));
+  if (SESSIZ)
+    kontrol('Sessiz hediye: sahnede jetonlu hediye bildirimi çıkmaz', kd.every(([, yazi]) => !/jeton/.test(yazi)), kd.map(([j, yazi]) => j + ' → ' + yazi));
+  else
+    kontrol('Hediye kademeleri doğru eşleşir (bildirimde kademe adı)', kd.every(([, yazi, ad]) => yazi.includes(' ' + ad + '!')), kd.map(([j, yazi, ad]) => j + ' → ' + yazi.split('·').pop().trim() + ' (beklenen ' + ad + ')'));
 
   // kapasite
   await bosalt();
@@ -73,8 +80,10 @@ const { sonuc, kontrol } = kontrolcu();
   await bosalt();
   await p.evaluate(() => { for (let i = 0; i < 6; i++) CanliOyun.olay({ tip: 'yorum', kullanici: { id: 'b' + i, ad: 'bos' + i }, metin: 'x' }); CanliOyun.olay({ tip: 'hediye', kullanici: { id: 'b5', ad: 'bos5' }, jeton: 100 }); CanliOyun._test.zamanEkle(250); });
   // Kare döngüsü 45 karede bir en çok bir sessizi çıkarır: beş kişi ~4 sn (eskiden sabit 5,5 sn).
-  await bekle(p, 'sessiz kalanlar çıktı (1 kişi, lider bos5)', () => { const d2 = CanliOyun.durum(); return d2.kisi === 1 && d2.lider === 'bos5'; }, undefined, 15000);
-  d = await durum(); kontrol('4 dakika sessiz kalan çıkar, hediye atan ve lider kalır', d.kisi === 1 && d.lider === 'bos5', d.sira);
+  // Sessiz hediyede lider ilk gelen (bos0) olduğundan o da kalır: hediye atan + lider = 2 kişi.
+  const KALAN = SESSIZ ? 'bos0,bos5' : 'bos5';
+  await bekle(p, 'sessiz kalanlar çıktı (kalan ' + KALAN + ')', k2 => CanliOyun.durum().sira.map(x => x[0]).sort().join() === k2, KALAN, 15000);
+  d = await durum(); kontrol('4 dakika sessiz kalan çıkar, hediye atan ve lider kalır', d.sira.map(x => x[0]).sort().join() === KALAN, d.sira);
 
   // ---------- KÖTÜ NİYETLİ / BOZUK GİRDİ ----------
   await bosalt();
@@ -134,8 +143,8 @@ const { sonuc, kontrol } = kontrolcu();
   // Yayın masası 250 ms'de bir yazılır (masaYaz).
   await bekle(p, 'yayın masası yazıldı (3 kişi, 45 jeton, 3 satır)', () => document.getElementById('d-kisi').textContent === '3' && document.getElementById('d-jeton').textContent === '45' && document.querySelectorAll('#kisi-liste li[data-id]').length === 3, undefined, 3000);
   const ms = await p.evaluate(() => { const t = id => document.getElementById(id).textContent; return { kisi: t('d-kisi'), jeton: t('d-jeton'), lider: t('d-lider'), bag: t('d-bag'), kare: t('d-kare'), satir: [...document.querySelectorAll('#kisi-liste li[data-id]')].map(li => li.dataset.id + ':' + li.querySelector('.ad').textContent), kapasite: t('d-kapasite'), birim: t('d-birim'), durum: document.getElementById('d-bag-hucre').dataset.durum, durumIkon: document.querySelector('#d-bag-hucre use').getAttribute('href'), kip: { panel: document.getElementById('panel').dataset.kip, deneme: !document.getElementById('deneme-kart').hidden && !!document.getElementById('s-yorum').offsetParent && !!document.getElementById('oto').offsetParent, kademeGizli: document.getElementById('kademe-kart').hidden, gelismisKapali: !document.getElementById('gelismis').open, buOyundaGizli: document.getElementById('bu-oyunda-kart').hidden === !document.getElementById('bu-oyunda').children.length } }; });
-  kontrol('Özet satırı: sahnedeki kişi / kapasite ve birim, toplam jeton, lider; durum göstergesi "Deneme" (ikonuyla); kare süresi Gelişmiş\'te', ms.kisi === '3' && ms.kapasite === String(KAP) && ms.birim === AYAR.birim && ms.jeton === '45' && ms.lider === 'Lale' && ms.bag === 'Deneme' && ms.durum === 'deneme' && ms.durumIkon === '#i-deneme' && /\d/.test(ms.kare), ms);
-  kontrol('Sahnedekiler listesi jetona göre sıralı', ms.satir.join(',') === 'm2:Lale,m1:Mert,m3:kotu_ad', ms.satir);
+  kontrol('Özet satırı: sahnedeki kişi / kapasite ve birim, toplam jeton, lider; durum göstergesi "Deneme" (ikonuyla); kare süresi Gelişmiş\'te', ms.kisi === '3' && ms.kapasite === String(KAP) && ms.birim === AYAR.birim && ms.jeton === '45' && ms.lider === (SESSIZ ? 'Mert' : 'Lale') && ms.bag === 'Deneme' && ms.durum === 'deneme' && ms.durumIkon === '#i-deneme' && /\d/.test(ms.kare), ms);
+  kontrol(SESSIZ ? 'Sahnedekiler listesi geliş sırasında (sessiz hediye)' : 'Sahnedekiler listesi jetona göre sıralı', ms.satir.join(',') === (SESSIZ ? 'm1:Mert,m2:Lale,m3:kotu_ad' : 'm2:Lale,m1:Mert,m3:kotu_ad'), ms.satir);
   const mod = await p.evaluate(async () => {
     const T = CanliOyun._test, bekle = ms2 => new Promise(r => setTimeout(r, ms2)), satir = id => [...document.querySelectorAll('#kisi-liste li')].find(li => li.dataset.id === id);
     // durum beklemesi: kosul doğru olunca ya da sinir dolunca döner (sonraki kontrol durumu kendisi sınar)
@@ -694,7 +703,7 @@ const { sonuc, kontrol } = kontrolcu();
   });
   kontrol('Sahne yazıları: bildirimler sıralama kutusunun üstüne binmez', !yzi.bildirimKesisir, yzi.ust);
   kontrol('Sahne yazıları: sahneYazi.pankart "alt" ile pankart sıralama kutusunun altından, oyuncu şeridinden geçer', !yzi.altKesisir && yzi.altAlanda, { alt: yzi.alt, oncekiYerKesisir: yzi.ustKesisir });
-  kontrol('Ölçüm (_test.olcum, kare-cek JSON): sahne yazılarının kutuları ve oyuncuların yüzü ölçülür', yzi.ust.sira && yzi.ust.bildirim.length === 3 && yzi.kisiler >= 6 && yzi.adli >= 1, { kisi: yzi.kisiler, yuzlu: yzi.yuzlu, adli: yzi.adli });
+  kontrol('Ölçüm (_test.olcum, kare-cek JSON): sahne yazılarının kutuları ve oyuncuların yüzü ölçülür', (yzi.ust.sira || SESSIZ) && yzi.ust.bildirim.length === 3 && yzi.kisiler >= 6 && yzi.adli >= 1, { kisi: yzi.kisiler, yuzlu: yzi.yuzlu, adli: yzi.adli });
 
   // tema: sahne ve panel ayrı renk
   const tema = await e.evaluate(() => {

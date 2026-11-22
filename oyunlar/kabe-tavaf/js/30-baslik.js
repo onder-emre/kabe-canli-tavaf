@@ -447,6 +447,8 @@ function sahneStilKur() {
 .sira li .jt::after{content:" jeton"}
 .sira li.bas{background:transparent}
 .sira li.bas .no{background:var(--vurgu);color:#1a1405;box-shadow:0 0 1.6cqw rgba(232,195,106,.8)}
+/* Jeton sıralaması ("Gönül verenler") yayında gösterilmez: hediye karşılığı sıralama / ödül sayılır (OYUN.hediyeSessiz) */
+.sira{display:none!important}
 .sira li.bas .ad{color:#ffe3a0}
 .sira li.bas .jt{color:var(--vurgu)}
 .sira .bos{background:transparent;text-align:center;color:var(--soluk);padding:.6cqw}
