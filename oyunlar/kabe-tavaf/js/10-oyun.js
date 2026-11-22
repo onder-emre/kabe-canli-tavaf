@@ -314,7 +314,7 @@ function yuruyenGuncelle(k, dt, dB) {
           k.tur = 0;
           k.tamamB = B;
           bildir(k.ad, 'tavafını tamamladı', 'Allah kabul etsin');
-          gunluk('tavaf', k.ad, 'yedi turu tamamladı', true, k.id);
+          gunluk('tavaf', k.ad, 'yedi turu tamamladı', false, k.id); // hediye değil: akışta Hediyeler süzgecine düşmesin
           k.nurBit = Math.max(k.nurBit || 0, B) + 8;
         }
       }
