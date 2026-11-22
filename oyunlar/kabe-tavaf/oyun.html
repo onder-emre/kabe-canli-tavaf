@@ -3996,14 +3996,23 @@ function adresTazele(adres) {
 }
 // Tarayıcı saklama anahtarları oyunun kimliğiyle başlar: iki oyun aynı tarayıcıda birbirinin sırasını görmez.
 const SAKLA = String(OYUN.id || 'canli-oyun') + '-sira', AYAR_SAKLA = String(OYUN.id || 'canli-oyun') + '-ayar';
+// Sıra, motorun bu başlatmasının kimliğiyle (OYUN_CALISTIRMA.kimlik) saklanır ve yalnız aynı başlatmada geri gelir:
+// yayın sırasında sayfa yenilenirse hediye atanlar kaybolmaz, ama oyun yeniden başlatılınca (kısayol, Yayın düğmesi,
+// motorun yeniden açılması) önceki yayının adları ve jetonları yeni yayına taşınmaz. Kimlik yoksa (motorsuz
+// komut satırı kipi) eski kural: 3 saat.
+const siraKimlik = () => String((window.OYUN_CALISTIRMA && window.OYUN_CALISTIRMA.kimlik) || '');
 function siraSakla() { if (!KOPRU)
   return; try {
-  localStorage.setItem(SAKLA, JSON.stringify({ t: Date.now(), oyuncular: D.sira.filter(k => k.jeton > 0).slice(0, 60).map(k => ({ id: k.id, ad: k.ad, jeton: k.jeton })) }));
+  localStorage.setItem(SAKLA, JSON.stringify({ t: Date.now(), c: siraKimlik(), oyuncular: D.sira.filter(k => k.jeton > 0).slice(0, 60).map(k => ({ id: k.id, ad: k.ad, jeton: k.jeton })) }));
 }
 catch (e) { } }
 function siraOku() { try {
-  const v = JSON.parse(localStorage.getItem(SAKLA) || 'null');
-  return v && Date.now() - v.t < 3 * 3600e3 && Array.isArray(v.oyuncular) ? v.oyuncular : null;
+  const v = JSON.parse(localStorage.getItem(SAKLA) || 'null'), c = siraKimlik();
+  if (!v || !Array.isArray(v.oyuncular))
+    return null;
+  if (c)
+    return v.c === c ? v.oyuncular : null;
+  return Date.now() - v.t < 3 * 3600e3 ? v.oyuncular : null;
 }
 catch (e) {
   return null;
