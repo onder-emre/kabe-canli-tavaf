@@ -84,7 +84,7 @@ function masaKur() {
   // adsız tavafçılar
   const npc = ogeYap('button', 'anahtar', 'Adsız tavafçılar');
   npc.type = 'button';
-  npc.setAttribute('aria-pressed', 'true');
+  npc.setAttribute('aria-pressed', String(!!D.npcAcik));
   npc.title = 'Kalabalık az iken halkayı dolduran adsız tavafçılar';
   npc.onclick = () => { D.npcAcik = !D.npcAcik; npc.setAttribute('aria-pressed', String(D.npcAcik)); oyunYerlesim(); };
   kutu.append(baslik, ipucu, dosyaDug, dosya, ytSatir, ol, dugmeler, ileti, npc);

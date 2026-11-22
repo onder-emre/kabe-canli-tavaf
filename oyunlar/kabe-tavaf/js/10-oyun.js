@@ -13,7 +13,9 @@ const HIZ = 0.4;                                    // vuruş başına yürüme 
 const BASLA_ACI = Math.PI * 1.25;                   // Hacerü'l-Esved köşesi: kameradan bakınca Kâbe'nin sol ön köşesi
 const DIS_R = 8.4;                                  // halka dışı: girenler buradan gelir, çıkanlar buraya gider
 
-Object.assign(D, { tamam: 0, npc: [], kafile: [], npcAcik: true, isikBit: -99, nur: null, kart: null, gulBit: -99,
+// Adsız tavafçılar (sahte kalabalık) yalnız denemede baştan açık: gerçek yayında sahnede yalnız gerçek izleyiciler yürür
+// (TikTok sahte etkileşim sayabilir). Masadaki "Adsız tavafçılar" düğmesi yine açar.
+Object.assign(D, { tamam: 0, npc: [], kafile: [], npcAcik: document.documentElement.getAttribute('data-kip') !== 'canli', isikBit: -99, nur: null, kart: null, gulBit: -99,
   yaprak: [], begeniHedef: 0, sonB: 0, hediyeKart: { tip: '', b: -99 } });
 
 const halkaR = l => HALKA0 + l * HALKA_ARA;
