@@ -904,7 +904,7 @@ function anaSayfaIstegi(req, res, yol) {
 // Sayfanın kipi açılıştan bellidir: masa daha ilk karesinde doğru düzende çizilir (deneme izleyicisi kartı yalnız
 // denemede). Köprünün seçtiği iki sabit kelimeden biri yazılır, istekten gelen hiçbir şey yazılmaz; sayfa <html data-kip>
 // okur (docs/OLAYLAR.md). Diskten açılan sayfada bu yoktur, sayfa deneme kipindedir.
-// YAYIN SAHNESİ: TikTok LIVE Studio'nun Link kaynağına yazılan sabit adres (http://kabe.localhost:8787/sahne/). O an
+// YAYIN SAHNESİ: TikTok LIVE Studio'nun Link kaynağına yazılan sabit adres (http://127.0.0.1.nip.io:8787/sahne/). O an
 // çalışan oyunu yalnız sahne olarak verir (panel yok, "Paneli göster" yok); ses de bu sayfadan çıkar (cekirdek/js/65-kumanda.js).
 // Oyun yoksa ya da değişirse bekleme sayfası iki saniyede bir bakar, kendini yeniler: Studio'da adres hiç değişmez.
 const SAHNE_EK = '<style>#cik-yayin,.ana-don,#ses-cagri,#calistirma-ortu{display:none!important}html,body{background:#000}</style>\n' +

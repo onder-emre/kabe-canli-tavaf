@@ -37,7 +37,8 @@ Oyun Studio'nun içinde doğrudan çizilir; ekran ya da pencere yakalanmaz, gör
 doğrudan yayına gider.
 
 1. Studio'da **Add source → Link**.
-2. Adres: `http://kabe.localhost:8787/sahne/` · **Turn on sound** açık · **Custom resolution** açıp 1080 × 1920.
+2. Adres: `http://127.0.0.1.nip.io:8787/sahne/` · **Turn on sound** açık · **Custom resolution** açıp 1080 × 1920.
+   (Studio "localhost" yazılan adresi kabul etmiyor; bu ad her zaman bu bilgisayarı gösterir, çözmek için internet ister.)
 3. **Add source**. Kaynağı sağ tıkla → **Full screen → Fit to screen**.
 
 Bu adres hiç değişmez: oyun başlatılınca kendiliğinden görünür, oyun yokken "Oyun bekleniyor" yazar.

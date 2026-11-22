@@ -1,7 +1,7 @@
 /* KUMANDA — oyunu TikTok LIVE Studio'nun "Link" kaynağında doğrudan çizdirmek, paneli ayrı bir sayfada tutmak.
  *
  * İki sayfa aynı başlatmaya bağlanır:
- *   Yayın sahnesi (KUMANDA_SAHNE): motorun /sahne/ adresi (Studio'ya "http://kabe.localhost:8787/sahne/" yazılır).
+ *   Yayın sahnesi (KUMANDA_SAHNE): motorun /sahne/ adresi (Studio'ya "http://127.0.0.1.nip.io:8787/sahne/" yazılır).
  *     Yalnız sahneyi çizer, sesi kendisi çalar; görüntü ve ses pencere yakalamadan, kayıpsız yayına gider. Paneli yoktur.
  *   Panel: ana sayfadan açılan her zamanki oyun sayfası (Safari). Sahne bağlıyken kendi sesini kısar (muzik.uzakSustur,
  *     iki yerden ses çıkmasın); masada basılan düğmeler, yazılan alanlar ve yayıncının eylemleri (gizle, çıkar, balon)
