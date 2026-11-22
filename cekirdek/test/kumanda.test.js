@@ -84,6 +84,13 @@ async function kadar(fn, sn = 8000) { const t = Date.now(); while (Date.now() - 
   const onceki = await sahne.evaluate(() => [...CanliOyun._test.D.oy.keys()]);
   await panel.click('#bosalt-sor'); await panel.click('#bosalt');
   ok(onceki.length > 0 && await kadar(() => sahne.evaluate(o => o.every(i => !CanliOyun._test.D.oy.has(i)), onceki)), 'Tavafı boşalt sahnede de boşalttı (' + onceki.length + ' kişi gitti)');
+  // Özet: yalnız sahnede olan değişiklik (panel arka planda kalıp kendi oyununu yürütemese de) panele yansır
+  await sahne.evaluate(() => { CanliOyun.olay({ tip: 'yorum', kullanici: { id: 'yalniz_sahne', ad: 'Sahneci' }, metin: 'amin' }); CanliOyun._test.D.tamam = 77; });
+  ok(await kadar(() => panel.evaluate(() => CanliOyun._test.D.oy.has('yalniz_sahne') && !CanliOyun._test.D.oy.get('yalniz_sahne').cikiyor && CanliOyun._test.D.tamam === 77)), 'özet: sahnedeki yeni kişi ve tavaf sayısı panele geçti');
+  await panel.evaluate(() => CanliOyun.olay({ tip: 'yorum', kullanici: { id: 'yalniz_panel', ad: 'Panelci' }, metin: 'amin' }));
+  await sahne.evaluate(() => { const k = CanliOyun._test.D.oy.get('yalniz_sahne'); if (k) { k.cikiyor = true; } });
+  ok(await kadar(() => panel.evaluate(() => { const D = CanliOyun._test.D; const a = D.oy.get('yalniz_panel'), b = D.oy.get('yalniz_sahne'); return (!a || a.cikiyor) && (!b || b.cikiyor); })), 'özet: sahnede olmayan kişi panelden de çıktı');
+  ok(await kadar(() => Promise.all([panel, sahne].map(p => p.evaluate(() => CanliOyun._test.D.sira.map(k => k.id).sort().join(',')))).then(([a, b]) => a === b)), 'özet: iki ekranın kişi listesi aynı');
   // Sahne kapanınca panel sesini geri açar
   await sahne.close();
   ok(await kadar(() => panel.evaluate(() => CanliOyun._test.muzik.uzak === false && document.getElementById('sahne-bilgi').hidden)), 'sahne kapanınca panel kendi sesine döndü');

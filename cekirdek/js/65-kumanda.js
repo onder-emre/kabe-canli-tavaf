@@ -89,6 +89,8 @@ const Kumanda = {
   al(m) {
     if (m.tip === 'sahne' && !KUMANDA_SAHNE)
       this.sahneGeldi(m);
+    else if (m.tip === 'sahne-ozet' && !KUMANDA_SAHNE)
+      this.ozetAl(m);
     else if (m.tip === 'kumanda' && KUMANDA_SAHNE)
       this.uygula(m);
   },
@@ -217,7 +219,55 @@ const Kumanda = {
     muzik.dinle(() => this.bilgiYaz()); // sesYaz'dan sonra çalışır: ses düğmesi sahnenin durumunu göstersin
     this.bilgiYaz();
   },
+  // Sahnenin özeti (her saniye): panel kendi kalabalığını sahneninkine eşitler. Safari arka plandaki sekmenin kare
+  // döngüsünü durdurur; o zaman panelde kimse tavafı bitirmez, sessizler çıkmaz, iki ekran ayrışırdı. Yayına giden
+  // sahnedir; panelin listesi (Sahnedekiler, lider, jeton, tavaf sayısı) ona uyar.
+  ozetAl(m) {
+    if (!Array.isArray(m.sira))
+      return;
+    const ids = new Set();
+    for (const x of m.sira.slice(0, 200)) {
+      if (!Array.isArray(x))
+        continue;
+      const id = String(x[0] || '').slice(0, 64);
+      if (!id || modKume.cikan.has(id))
+        continue;
+      ids.add(id);
+      let k = D.oy.get(id);
+      if (!k || k.cikiyor)
+        k = katil(id, kisalt(temiz(String(x[1] || id)), 18), true);
+      if (k)
+        k.jeton = Math.max(0, Math.min(1e9, +x[2] || 0));
+    }
+    for (const k of [...D.sira])
+      if (!ids.has(k.id))
+        cikar(k);
+    siraGuncelle();
+    if (typeof oyunOzetUygula === 'function')
+      try {
+        oyunOzetUygula(m.oyun || null);
+      }
+      catch (e) {
+        console.error(e);
+      }
+  },
   /* ---- yayın sahnesi ---- */
+  ozetYolla() {
+    const sira = D.sira.slice(0, 200).map(k => [k.id, k.ad, Math.round(k.jeton) || 0]);
+    let oyun = null;
+    if (typeof oyunOzet === 'function')
+      try {
+        oyun = oyunOzet();
+      }
+      catch (e) { }
+    const imza = JSON.stringify([sira, oyun]);
+    if (imza === this.sonOzet && Date.now() - this.sonOzetT < 5000)
+      return;
+    if (this.yolla({ tip: 'sahne-ozet', sira, oyun })) {
+      this.sonOzet = imza;
+      this.sonOzetT = Date.now();
+    }
+  },
   durumBildir() {
     const ses = muzik.ctx ? muzik.ctx.state : 'yok', acik = !!muzik.acik, imza = ses + '|' + acik;
     if (imza === this.sonDurum && Date.now() - this.sonT < 10000)
@@ -249,6 +299,7 @@ const Kumanda = {
     dene();
     const z = setInterval(() => { if (this.sesTamam) clearInterval(z); else dene(); }, 3000);
     setInterval(() => this.durumBildir(), 2000);
+    setInterval(() => this.ozetYolla(), 1000);
   },
   uygula(m) {
     switch (m.tur) {

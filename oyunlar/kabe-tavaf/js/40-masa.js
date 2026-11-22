@@ -362,6 +362,12 @@ async function oyunKumandaUygula(o) {
   sarkiKaydet();
   sarkiListeYaz();
 }
+// Kumanda özeti: sahnenin tavaf sayısı panele gider (panel arka plandayken kendi sayısı durur).
+function oyunOzet() { return { tamam: D.tamam }; }
+function oyunOzetUygula(o) {
+  if (o && Number.isFinite(o.tamam) && o.tamam >= 0)
+    D.tamam = Math.floor(o.tamam);
+}
 // Sahne: panelde bilgisayardan eklenen şarkı.
 function oyunKumanda(m) {
   if (m.is === 'sarki-dosya' && typeof m.dosya === 'string')

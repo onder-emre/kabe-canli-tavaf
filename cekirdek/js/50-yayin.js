@@ -106,7 +106,7 @@ const Yayin = {
         continue;
       }
       // Kumanda iletileri (65-kumanda.js): panelden yayın sahnesine giden düğmeler, sahnenin durumu. Olay değildir.
-      if (tek && (tek.tip === 'kumanda' || tek.tip === 'sahne')) {
+      if (tek && (tek.tip === 'kumanda' || tek.tip === 'sahne' || tek.tip === 'sahne-ozet')) {
         try {
           Kumanda.al(tek);
         }

@@ -243,6 +243,12 @@ function kumandaIletisi(soket, yuk) {
   if (o.tip === 'kumanda' && !soket.sahne && typeof o.tur === 'string') {
     const c = cerceve(JSON.stringify(o));
     for (const s of sahneler(soket.calistirma)) { try { s.write(c); } catch (e) { } }
+  } else if (o.tip === 'sahne-ozet' && soket.sahne && Array.isArray(o.sira)) {
+    // Sahnenin kalabalık özeti panellere (panel arka plandayken kendi oyunu durur, listesini buna eşitler)
+    const sira = o.sira.slice(0, 200).filter(x => Array.isArray(x)).map(x => [String(x[0] || '').slice(0, 64), String(x[1] || '').slice(0, 64), Math.max(0, Math.min(1e9, Math.round(+x[2]) || 0))]);
+    const oyun = o.oyun && typeof o.oyun === 'object' && Number.isFinite(o.oyun.tamam) ? { tamam: Math.max(0, Math.floor(o.oyun.tamam)) } : null;
+    const c = cerceve(JSON.stringify({ tip: 'sahne-ozet', sira, oyun }));
+    for (const s of istemciler) { if (s.sahne || s.calistirma !== soket.calistirma) continue; try { s.write(c); } catch (e) { } }
   } else if (o.tip === 'sahne-durum' && soket.sahne) {
     const yeni = { ses: ['running', 'suspended', 'closed', 'yok'].includes(o.ses) ? o.ses : null, acik: !!o.acik };
     const eski = soket.sahneDurum || {};
