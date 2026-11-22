@@ -128,7 +128,7 @@ function oyunHediye(k, jeton, kademe) {
     gul: ['Gül gönderdi', 'İsmi nurlandı'],
     kafile: ['Gül demeti gönderdi', 'Kafileye katıldı'],
     isik: ['Harem ışıklarını yaktı', 'Allah razı olsun'],
-    nur: ['Kâbe nurlandı', 'Adına büyük dua']
+    nur: ['Kâbe nurlandı', 'Allah razı olsun']
   }[tip];
   kartGoster(k.ad, KART[0], KART[1], tip, tip === 'nur' ? 7 : 4.2);
   if (tip === 'gul' || tip === 'nur')
@@ -140,7 +140,7 @@ function oyunHediye(k, jeton, kademe) {
   if (tip === 'nur') {
     D.nur = { k, b0: B, bit: B + 24 };
     k.yildiz = true;
-    pankart(k.ad + ' için', 'Rabbimiz dualarını kabul etsin');
+    pankart('Allah razı olsun', k.ad);
   }
 }
 function oyunLiderDegisti(eski, yeni) {
@@ -218,13 +218,9 @@ function begeniHedefBul(n) {
 }
 function begeniDenetle() {
   if (D.begeni >= D.begeniHedef && D.begeniHedef > 0) {
-    let varilan = D.begeniHedef;
-    for (const h of BEGENI_BASAMAK)
-      if (h <= D.begeni)
-        varilan = h;
     D.begeniHedef = begeniHedefBul(D.begeni);
-    pankart(varilan.toLocaleString('tr-TR') + ' beğeni', 'Kalabalık çoğalıyor, teşekkürler');
-    D.isikBit = Math.max(D.isikBit, B + 16);
+    // Basamağa ulaşınca ödül (pankart, ışık) yok: beğeniye karşılık ödül TikTok'ta yapay etkileşim sayılıyor.
+    // Beğeniler yalnız kalp olarak uçar (kalpAt); basamak yalnız masadaki sayım için tutulur.
   }
   else if (!D.begeniHedef)
     D.begeniHedef = begeniHedefBul(D.begeni);

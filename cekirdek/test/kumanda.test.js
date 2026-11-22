@@ -56,6 +56,10 @@ async function kadar(fn, sn = 8000) { const t = Date.now(); while (Date.now() - 
   // Sıra oku: 2. şarkıyı yukarı al
   await panel.click('.sarki-liste li:nth-child(2) button:nth-of-type(2)');
   ok(await kadar(() => sahne.evaluate(() => document.querySelector('.sarki-liste li .ad').textContent === 'deneme-sarki')), 'sıra değişikliği (↑) sahneye geçti');
+  // Panelin alttaki YouTube kutusu: sayfanın kendisinin geri yazdığı link (input olayı yok) Çal ile sahneye de gitmeli
+  await panel.evaluate(() => { document.getElementById('yt-link').value = 'https://www.youtube.com/watch?v=goyPvmDbE1s'; });
+  await panel.click('#yt-cal');
+  ok(await kadar(() => sahne.evaluate(() => document.getElementById('yt-link').value.includes('goyPvmDbE1s') && document.getElementById('yt-ileti').textContent !== 'Bu bir YouTube linki değil.')), 'alttaki YouTube kutusu: geri yazılmış link Çal ile sahnede de çalınmaya başlar');
   // Balon: B tuşu
   await panel.click('#yayin-gor'); await panel.keyboard.press('Escape');
   await panel.keyboard.press('b');

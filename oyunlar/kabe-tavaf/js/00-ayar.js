@@ -18,7 +18,7 @@ const OYUN = {
   // Büyükten küçüğe. tip, oyunHediye'nin hangi etkiyi başlatacağını seçer; etki paneldeki tabloda ve sahnedeki
   // hediye kartlarında yazar (kart: kisa).
   kademe: [
-    { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adına büyük dua okunur', kisa: 'Kâbe nurlanır, büyük dua' },
+    { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adı parlar', kisa: 'Kâbe nurlanır' },
     { min: 100, ad: 'Harem ışıkları', tip: 'isik', etki: 'Harem ışıkları yanar, minareler parlar', kisa: 'Harem ışıkları yanar' },
     { min: 10, ad: 'Kafile', tip: 'kafile', etki: 'Gönderenin adına bir kafile tavafa katılır', kisa: 'Kafileye katılır' },
     { min: 1, ad: 'Gül', tip: 'gul', etki: 'Gönderenin adı nurlanır, gül yaprakları yağar', kisa: 'İsmin nurlanır, gül yağar' }

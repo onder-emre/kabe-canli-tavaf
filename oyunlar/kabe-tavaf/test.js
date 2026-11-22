@@ -52,7 +52,7 @@ const { sonuc, kontrol } = kontrolcu();
   });
   kontrol('Yedi turu biten izleyicinin tavafı tamamlanır, sayaç artar', tur.tamam === 1, tur);
 
-  // beğeni hedefi geçilince pankart çıkar, hedef büyür
+  // beğeni hedefi geçilince ödül yok (pankart çıkmaz; TikTok beğeniye karşılık ödülü yapay etkileşim sayıyor), hedef yalnız sayım için büyür
   const beg = await p.evaluate(async () => {
     const D = CanliOyun._test.D, h0 = D.begeniHedef;
     CanliOyun.olay({ tip: 'begeni', kullanici: { id: 'b1', ad: 'Beğenen' }, adet: 500 });
@@ -60,7 +60,7 @@ const { sonuc, kontrol } = kontrolcu();
     await new Promise(r => setTimeout(r, 200));
     return { h0, h1: D.begeniHedef, pankart: document.getElementById('pankart-yeri').textContent };
   });
-  kontrol('Beğeni hedefi geçilince teşekkür pankartı çıkar, yeni hedef konur', beg.h1 > beg.h0 && /beğeni/.test(beg.pankart), beg);
+  kontrol('Beğeni hedefi geçilince ödül pankartı çıkmaz (yalnız sayım büyür)', beg.h1 > beg.h0 && !/beğeni/.test(beg.pankart), beg);
 
   // şarkı sırası: YouTube linki eklenir, sıra değişir, silinir; dosya adı HTML olarak yazılmaz
   const sk = await p.evaluate(async () => {

@@ -665,7 +665,7 @@ const OYUN = {
   // Büyükten küçüğe. tip, oyunHediye'nin hangi etkiyi başlatacağını seçer; etki paneldeki tabloda ve sahnedeki
   // hediye kartlarında yazar (kart: kisa).
   kademe: [
-    { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adına büyük dua okunur', kisa: 'Kâbe nurlanır, büyük dua' },
+    { min: 500, ad: 'Kâbe nurlanır', tip: 'nur', etki: 'Kâbe nurlanır, gönderenin adı parlar', kisa: 'Kâbe nurlanır' },
     { min: 100, ad: 'Harem ışıkları', tip: 'isik', etki: 'Harem ışıkları yanar, minareler parlar', kisa: 'Harem ışıkları yanar' },
     { min: 10, ad: 'Kafile', tip: 'kafile', etki: 'Gönderenin adına bir kafile tavafa katılır', kisa: 'Kafileye katılır' },
     { min: 1, ad: 'Gül', tip: 'gul', etki: 'Gönderenin adı nurlanır, gül yaprakları yağar', kisa: 'İsmin nurlanır, gül yağar' }
@@ -5025,6 +5025,20 @@ const Kumanda = {
       throw new Error('Şarkı alınamadı.');
     return r.blob();
   },
+  // Düğmeden önce aynı kutudaki yazı alanlarının o anki değeri gider. Sayfanın kendisinin doldurduğu değer (ör. son
+  // YouTube linki, sayfa açılınca kutuya geri yazılır) input olayı üretmez; gitmezse sahnedeki kutu boş kalırdı.
+  alanEsitle(kok) {
+    if (!kok)
+      return;
+    const alanlar = kok.matches && kok.matches('input, textarea') ? [kok] : [...kok.querySelectorAll('input, textarea')];
+    for (const t of alanlar) {
+      if (t.type === 'file' || t.type === 'checkbox' || t.type === 'radio' || t.type === 'range' || t.closest(KUMANDA_HARIC))
+        continue;
+      const h = kumandaHedefYaz(t);
+      if (h)
+        this.gonder({ tur: 'deger', h, deger: String(t.value).slice(0, 4000), olay: 'input' });
+    }
+  },
   panelKur() {
     const panel = $('panel'), bagli = () => this.sahne.bagli > 0;
     document.addEventListener('click', e => {
@@ -5040,8 +5054,10 @@ const Kumanda = {
       if (b.closest(KUMANDA_HARIC))
         return;
       const h = kumandaHedefYaz(b);
-      if (h)
-        this.gonder({ tur: 'tik', h });
+      if (!h)
+        return;
+      this.alanEsitle(b.parentElement && b.parentElement.closest('[id]'));
+      this.gonder({ tur: 'tik', h });
     }, true);
     const deger = e => {
       const t = e.target;
@@ -5058,8 +5074,10 @@ const Kumanda = {
       if (!e.isTrusted || !bagli() || e.key !== 'Enter' || !t || t.tagName !== 'INPUT' || !panel.contains(t) || t.closest(KUMANDA_HARIC))
         return;
       const h = kumandaHedefYaz(t);
-      if (h)
-        this.gonder({ tur: 'tus', h, key: 'Enter' });
+      if (!h)
+        return;
+      this.alanEsitle(t);
+      this.gonder({ tur: 'tus', h, key: 'Enter' });
     }, true);
     // Kendi iletisiyle giden eylemler: listelerdeki satırlar iki sayfada farklı sırada olabilir, kimlikle gider.
     const gz = izleyiciGizle, go = izleyiciGoster, ck = izleyiciCikar, ga = izleyiciGeriAl, ba = balonAyarla;
@@ -5328,7 +5346,7 @@ function oyunHediye(k, jeton, kademe) {
     gul: ['Gül gönderdi', 'İsmi nurlandı'],
     kafile: ['Gül demeti gönderdi', 'Kafileye katıldı'],
     isik: ['Harem ışıklarını yaktı', 'Allah razı olsun'],
-    nur: ['Kâbe nurlandı', 'Adına büyük dua']
+    nur: ['Kâbe nurlandı', 'Allah razı olsun']
   }[tip];
   kartGoster(k.ad, KART[0], KART[1], tip, tip === 'nur' ? 7 : 4.2);
   if (tip === 'gul' || tip === 'nur')
@@ -5340,7 +5358,7 @@ function oyunHediye(k, jeton, kademe) {
   if (tip === 'nur') {
     D.nur = { k, b0: B, bit: B + 24 };
     k.yildiz = true;
-    pankart(k.ad + ' için', 'Rabbimiz dualarını kabul etsin');
+    pankart('Allah razı olsun', k.ad);
   }
 }
 function oyunLiderDegisti(eski, yeni) {
@@ -5418,13 +5436,9 @@ function begeniHedefBul(n) {
 }
 function begeniDenetle() {
   if (D.begeni >= D.begeniHedef && D.begeniHedef > 0) {
-    let varilan = D.begeniHedef;
-    for (const h of BEGENI_BASAMAK)
-      if (h <= D.begeni)
-        varilan = h;
     D.begeniHedef = begeniHedefBul(D.begeni);
-    pankart(varilan.toLocaleString('tr-TR') + ' beğeni', 'Kalabalık çoğalıyor, teşekkürler');
-    D.isikBit = Math.max(D.isikBit, B + 16);
+    // Basamağa ulaşınca ödül (pankart, ışık) yok: beğeniye karşılık ödül TikTok'ta yapay etkileşim sayılıyor.
+    // Beğeniler yalnız kalp olarak uçar (kalpAt); basamak yalnız masadaki sayım için tutulur.
   }
   else if (!D.begeniHedef)
     D.begeniHedef = begeniHedefBul(D.begeni);
@@ -6322,7 +6336,8 @@ function oyunUst(dt) {
   c.fillText('Yoruma “erkek” ya da “kadın” yaz, karakterin değişsin', GW / 2, 140);
   sayaclarCiz(150);
   duaKartCiz(188, 116);
-  hediyeKartlari(314, 86);
+  // Hediye kademe kartları yayında gösterilmez: ekranda "şu kadar jetona şu olur" yazmak hediye karşılığı vaat sayılır
+  // (TikTok yapay etkileşim / hediye isteme). Kademeler masada yazılı; hediye gelince etki ve teşekkür kartı çıkar.
   isimKartiCiz(GH - 84, 66);
 }
 function yaziAralik(cx, v) {
@@ -6340,16 +6355,16 @@ function hap(x, y, w, h, renk, cizgi) {
     c.stroke();
   }
 }
-// Üç hap: tavaftaki kişi, beğeni / hedef, tamamlanan tavaf
+// İki hap: tavaftaki kişi, tamamlanan tavaf. Beğeni hedefi (sayı / hedef) gösterilmez: izleyiciyi hedef için ekrana
+// art arda bastırmak TikTok'ta "beğeni ticareti / tekrarlanan hareketle etkileşim" sayılıp yayını kısıtlatıyor.
 function sayaclarCiz(y) {
   const sayi = D.sira.length;
   const parca = [
     ['nokta', sayi.toLocaleString('tr-TR') + ' kişi tavafta'],
-    ['kalp', Math.floor(D.begeni).toLocaleString('tr-TR') + ' / ' + (D.begeniHedef || 100).toLocaleString('tr-TR')],
     ['kabe', D.tamam.toLocaleString('tr-TR') + ' tavaf tamam']
   ];
   c.font = '600 17px ' + GOVDE_YAZI;
-  const ws = parca.map(p => c.measureText(p[1]).width + 46), ara = 10, top = ws.reduce((a, b) => a + b, 0) + ara * 2;
+  const ws = parca.map(p => c.measureText(p[1]).width + 46), ara = 10, top = ws.reduce((a, b) => a + b, 0) + ara * (parca.length - 1);
   let x = (GW - top) / 2;
   parca.forEach((p, i) => {
     const w = ws[i];
@@ -6371,12 +6386,6 @@ function sayaclarCiz(y) {
     c.textAlign = 'center';
     x += w + ara;
   });
-  // beğeni hedefine doğru ince çubuk (kalp hapının altında)
-  const bx = (GW - top) / 2 + ws[0] + ara, bw = ws[1], hedef = D.begeniHedef || 100;
-  const onceki = [0, ...BEGENI_BASAMAK].filter(h => h < hedef).pop() || 0;
-  const t = clamp((D.begeni - onceki) / Math.max(1, hedef - onceki), 0, 1);
-  c.fillStyle = 'rgba(255,91,122,0.85)';
-  c.fillRect(bx + 14, y + 27, (bw - 28) * t, 2);
 }
 function kalpIkon(x, y, r, renk) {
   c.fillStyle = renk;

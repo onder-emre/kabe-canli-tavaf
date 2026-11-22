@@ -153,6 +153,20 @@ const Kumanda = {
       throw new Error('Şarkı alınamadı.');
     return r.blob();
   },
+  // Düğmeden önce aynı kutudaki yazı alanlarının o anki değeri gider. Sayfanın kendisinin doldurduğu değer (ör. son
+  // YouTube linki, sayfa açılınca kutuya geri yazılır) input olayı üretmez; gitmezse sahnedeki kutu boş kalırdı.
+  alanEsitle(kok) {
+    if (!kok)
+      return;
+    const alanlar = kok.matches && kok.matches('input, textarea') ? [kok] : [...kok.querySelectorAll('input, textarea')];
+    for (const t of alanlar) {
+      if (t.type === 'file' || t.type === 'checkbox' || t.type === 'radio' || t.type === 'range' || t.closest(KUMANDA_HARIC))
+        continue;
+      const h = kumandaHedefYaz(t);
+      if (h)
+        this.gonder({ tur: 'deger', h, deger: String(t.value).slice(0, 4000), olay: 'input' });
+    }
+  },
   panelKur() {
     const panel = $('panel'), bagli = () => this.sahne.bagli > 0;
     document.addEventListener('click', e => {
@@ -168,8 +182,10 @@ const Kumanda = {
       if (b.closest(KUMANDA_HARIC))
         return;
       const h = kumandaHedefYaz(b);
-      if (h)
-        this.gonder({ tur: 'tik', h });
+      if (!h)
+        return;
+      this.alanEsitle(b.parentElement && b.parentElement.closest('[id]'));
+      this.gonder({ tur: 'tik', h });
     }, true);
     const deger = e => {
       const t = e.target;
@@ -186,8 +202,10 @@ const Kumanda = {
       if (!e.isTrusted || !bagli() || e.key !== 'Enter' || !t || t.tagName !== 'INPUT' || !panel.contains(t) || t.closest(KUMANDA_HARIC))
         return;
       const h = kumandaHedefYaz(t);
-      if (h)
-        this.gonder({ tur: 'tus', h, key: 'Enter' });
+      if (!h)
+        return;
+      this.alanEsitle(t);
+      this.gonder({ tur: 'tus', h, key: 'Enter' });
     }, true);
     // Kendi iletisiyle giden eylemler: listelerdeki satırlar iki sayfada farklı sırada olabilir, kimlikle gider.
     const gz = izleyiciGizle, go = izleyiciGoster, ck = izleyiciCikar, ga = izleyiciGeriAl, ba = balonAyarla;

@@ -70,7 +70,8 @@ function oyunUst(dt) {
   c.fillText('Yoruma “erkek” ya da “kadın” yaz, karakterin değişsin', GW / 2, 140);
   sayaclarCiz(150);
   duaKartCiz(188, 116);
-  hediyeKartlari(314, 86);
+  // Hediye kademe kartları yayında gösterilmez: ekranda "şu kadar jetona şu olur" yazmak hediye karşılığı vaat sayılır
+  // (TikTok yapay etkileşim / hediye isteme). Kademeler masada yazılı; hediye gelince etki ve teşekkür kartı çıkar.
   isimKartiCiz(GH - 84, 66);
 }
 function yaziAralik(cx, v) {
@@ -88,16 +89,16 @@ function hap(x, y, w, h, renk, cizgi) {
     c.stroke();
   }
 }
-// Üç hap: tavaftaki kişi, beğeni / hedef, tamamlanan tavaf
+// İki hap: tavaftaki kişi, tamamlanan tavaf. Beğeni hedefi (sayı / hedef) gösterilmez: izleyiciyi hedef için ekrana
+// art arda bastırmak TikTok'ta "beğeni ticareti / tekrarlanan hareketle etkileşim" sayılıp yayını kısıtlatıyor.
 function sayaclarCiz(y) {
   const sayi = D.sira.length;
   const parca = [
     ['nokta', sayi.toLocaleString('tr-TR') + ' kişi tavafta'],
-    ['kalp', Math.floor(D.begeni).toLocaleString('tr-TR') + ' / ' + (D.begeniHedef || 100).toLocaleString('tr-TR')],
     ['kabe', D.tamam.toLocaleString('tr-TR') + ' tavaf tamam']
   ];
   c.font = '600 17px ' + GOVDE_YAZI;
-  const ws = parca.map(p => c.measureText(p[1]).width + 46), ara = 10, top = ws.reduce((a, b) => a + b, 0) + ara * 2;
+  const ws = parca.map(p => c.measureText(p[1]).width + 46), ara = 10, top = ws.reduce((a, b) => a + b, 0) + ara * (parca.length - 1);
   let x = (GW - top) / 2;
   parca.forEach((p, i) => {
     const w = ws[i];
@@ -119,12 +120,6 @@ function sayaclarCiz(y) {
     c.textAlign = 'center';
     x += w + ara;
   });
-  // beğeni hedefine doğru ince çubuk (kalp hapının altında)
-  const bx = (GW - top) / 2 + ws[0] + ara, bw = ws[1], hedef = D.begeniHedef || 100;
-  const onceki = [0, ...BEGENI_BASAMAK].filter(h => h < hedef).pop() || 0;
-  const t = clamp((D.begeni - onceki) / Math.max(1, hedef - onceki), 0, 1);
-  c.fillStyle = 'rgba(255,91,122,0.85)';
-  c.fillRect(bx + 14, y + 27, (bw - 28) * t, 2);
 }
 function kalpIkon(x, y, r, renk) {
   c.fillStyle = renk;
